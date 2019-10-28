@@ -50,6 +50,7 @@ package arwen
 //
 // extern void debugPrintBigInt(void* context, int32_t value);
 // extern void debugPrintInt64(void* context, long long value);
+// extern void debugPrintInt32(void* context, int32_t value);
 // extern void debugPrintBytes(void* context, int32_t byteOffset, int32_t byteLength);
 // extern void debugPrintString(void* context, int32_t byteOffset, int32_t byteLength);
 import "C"
@@ -291,6 +292,11 @@ func ElrondEImports() (*wasmer.Imports, error) {
 	}
 
 	imports, err = imports.Append("debugPrintBigInt", debugPrintBigInt, C.debugPrintBigInt)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("debugPrintInt64", debugPrintInt64, C.debugPrintInt64)
 	if err != nil {
 		return nil, err
 	}
@@ -656,12 +662,12 @@ func bigIntgetExternalBalance(context unsafe.Pointer, addressOffset int32, resul
 }
 
 //export bigIntNew
-func bigIntNew(context unsafe.Pointer, smallValue int64) int32 {
+func bigIntNew(context unsafe.Pointer, smallValue int32) int32 {
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := getHostContext(instCtx.Data())
 
 	fmt.Println("bigIntNew ", smallValue)
-	return hostContext.BigInsertInt64(smallValue)
+	return hostContext.BigInsertInt64(int64(smallValue))
 }
 
 //export bigIntByteLength
@@ -785,8 +791,13 @@ func debugPrintBigInt(context unsafe.Pointer, handle int32) {
 }
 
 //export debugPrintInt64
-func debugPrintInt32(context unsafe.Pointer, value int64) {
+func debugPrintInt64(context unsafe.Pointer, value int64) {
 	fmt.Printf(">>> Int64: %d\n", value)
+}
+
+//export debugPrintInt32
+func debugPrintInt32(context unsafe.Pointer, value int32) {
+	fmt.Printf(">>> Int32: %d\n", value)
 }
 
 //export debugPrintBytes
