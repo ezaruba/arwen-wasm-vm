@@ -234,7 +234,7 @@ func displayVMOutput(output *vmcommon.VMOutput) {
 		}
 
 		for _, storageUpdate := range outputAccount.StorageUpdates {
-			fmt.Println("           Storage update key: "+hex.EncodeToString(storageUpdate.Offset)+" value: ", hex.EncodeToString(storageUpdate.Data))
+			fmt.Println("           Storage update key: "+hex.EncodeToString(storageUpdate.Offset)+" value: ", storageUpdate.Data)
 		}
 	}
 

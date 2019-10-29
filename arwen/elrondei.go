@@ -621,7 +621,7 @@ func bigIntstorageStore(context unsafe.Pointer, keyOffset int32, source int32) i
 	key := loadBytes(instCtx.Memory(), keyOffset, hashLen)
 	bytes := hostContext.BigGetBytes(source)
 
-	fmt.Println("bigIntstorageStore key: "+string(key)+"value: ", bytes)
+	fmt.Println("bigIntstorageStore key: " + hex.EncodeToString(key) + ", value: ", bytes)
 	return hostContext.SetStorage(hostContext.GetSCAddress(), key, bytes)
 }
 
@@ -635,7 +635,7 @@ func bigIntstorageLoad(context unsafe.Pointer, keyOffset int32, destination int3
 
 	hostContext.BigSetBytes(destination, bytes)
 
-	fmt.Println("bigIntstorageLoad key: "+string(key)+"value: ", bytes)
+	fmt.Println("bigIntstorageLoad key: " + hex.EncodeToString(key) + ", value: ", bytes)
 	return int32(len(bytes))
 }
 
