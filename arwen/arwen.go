@@ -86,6 +86,8 @@ type vmContext struct {
 }
 
 func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInput) (*vmcommon.VMOutput, error) {
+	fmt.Println("arwen.RunSmartContractCreate")
+
 	host.initInternalValues()
 	host.vmInput = input.VMInput
 
@@ -155,6 +157,8 @@ func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInpu
 var ErrInitFuncCalledInRun = errors.New("it is not allowed to call init in run")
 
 func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (*vmcommon.VMOutput, error) {
+	fmt.Println("arwen.RunSmartContractCall")
+
 	host.initInternalValues()
 	host.vmInput = input.VMInput
 	host.scAddress = input.RecipientAddr
