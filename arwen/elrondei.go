@@ -486,7 +486,7 @@ func getCaller(context unsafe.Pointer, resultOffset int32) {
 	if err != nil {
 		fmt.Println("getCaller error: " + err.Error())
 	}
-	fmt.Println("getCaller " + string(caller))
+	fmt.Println("getCaller " + hex.EncodeToString(caller))
 }
 
 //export getCallValue
