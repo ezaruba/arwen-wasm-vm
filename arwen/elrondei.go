@@ -8,45 +8,37 @@ package arwen
 //
 // extern void getOwner(void *context, int32_t resultOffset);
 // extern void getExternalBalance(void *context, int32_t addressOffset, int32_t resultOffset);
-// extern int32_t getBlockHash(void *context, long long nonce, int32_t resultOffset);
-// extern int32_t transfer(void *context, long long gasLimit, int32_t dstOffset, int32_t sndOffset, int32_t valueOffset, int32_t dataOffset, int32_t length);
+// extern int32_t blockHash(void *context, long long nonce, int32_t resultOffset);
+// extern int32_t transferValue(void *context, long long gasLimit, int32_t dstOffset, int32_t sndOffset, int32_t valueOffset, int32_t dataOffset, int32_t length);
 // extern int32_t getArgument(void *context, int32_t id, int32_t argOffset);
 // extern int32_t getFunction(void *context, int32_t functionOffset);
 // extern int32_t getNumArguments(void *context);
 // extern int32_t storageStore(void *context, int32_t keyOffset, int32_t dataOffset, int32_t dataLength);
 // extern int32_t storageLoad(void *context, int32_t keyOffset, int32_t dataOffset);
 // extern void getCaller(void *context, int32_t resultOffset);
-// extern int32_t getCallValue(void *context, int32_t resultOffset);
+// extern int32_t callValue(void *context, int32_t resultOffset);
 // extern void writeLog(void *context, int32_t pointer, int32_t length, int32_t topicPtr, int32_t numTopics);
-// extern void finish(void* context, int32_t dataOffset, int32_t length);
+// extern void returnData(void* context, int32_t dataOffset, int32_t length);
 // extern void signalError(void* context);
 // extern long long getGasLeft(void *context);
+//
 // extern long long getBlockTimestamp(void *context);
+// extern long long getBlockNonce(void *context);
+// extern long long getBlockRound(void *context);
+// extern long long getBlockEpoch(void *context);
+// extern void getBlockRandomSeed(void *context, int32_t resultOffset);
+// extern void getStateRootHash(void *context, int32_t resultOffset);
+//
+// extern long long getPrevBlockTimestamp(void *context);
+// extern long long getPrevBlockNonce(void *context);
+// extern long long getPrevBlockRound(void *context);
+// extern long long getPrevBlockEpoch(void *context);
+// extern void getPrevBlockRandomSeed(void *context, int32_t resultOffset);
 //
 // extern long long int64getArgument(void *context, int32_t id);
 // extern int32_t int64storageStore(void *context, int32_t keyOffset, long long value);
 // extern long long int64storageLoad(void *context, int32_t keyOffset);
 // extern void int64finish(void* context, long long value);
-//
-// extern int32_t bigIntNew(void* context, int32_t smallValue);
-// extern int32_t bigIntByteLength(void* context, int32_t reference);
-// extern int32_t bigIntGetBytes(void* context, int32_t reference, int32_t byteOffset);
-// extern void bigIntSetBytes(void* context, int32_t destination, int32_t byteOffset, int32_t byteLength);
-// extern int32_t bigIntIsInt64(void* context, int32_t reference);
-// extern long long bigIntGetInt64(void* context, int32_t reference);
-// extern void bigIntSetInt64(void* context, int32_t destination, long long value);
-// extern void bigIntAdd(void* context, int32_t destination, int32_t op1, int32_t op2);
-// extern void bigIntSub(void* context, int32_t destination, int32_t op1, int32_t op2);
-// extern void bigIntMul(void* context, int32_t destination, int32_t op1, int32_t op2);
-// extern int32_t bigIntCmp(void* context, int32_t op1, int32_t op2);
-// extern void bigIntFinish(void* context, int32_t reference);
-// extern int32_t bigIntstorageStore(void *context, int32_t keyOffset, int32_t source);
-// extern int32_t bigIntstorageLoad(void *context, int32_t keyOffset, int32_t destination);
-// extern void bigIntgetArgument(void *context, int32_t id, int32_t destination);
-// extern void bigIntgetCallValue(void *context, int32_t destination);
-// extern void bigIntgetExternalBalance(void *context, int32_t addressOffset, int32_t result);
-//
-// extern void debugPrintBigInt(void* context, int32_t value);
 // extern void debugPrintInt64(void* context, long long value);
 // extern void debugPrintInt32(void* context, int32_t value);
 // extern void debugPrintBytes(void* context, int32_t byteOffset, int32_t byteLength);
@@ -63,46 +55,9 @@ import (
 	"github.com/ElrondNetwork/go-ext-wasm/wasmer"
 )
 
-// BigIntHandle is the type we use to represent a reference to a big int in the host.
-type BigIntHandle = int32
-
-// HostContext abstracts away the blockchain functionality from wasmer.
-type HostContext interface {
-	Arguments() []*big.Int
-	Function() string
-	AccountExists(addr []byte) bool
-	GetStorage(addr []byte, key []byte) []byte
-	SetStorage(addr []byte, key []byte, value []byte) int32
-	GetBalance(addr []byte) []byte
-	GetCodeSize(addr []byte) int
-	BlockHash(nonce int64) []byte
-	GetCodeHash(addr []byte) []byte
-	GetCode(addr []byte) []byte
-	SelfDestruct(addr []byte, beneficiary []byte)
-	GetVMInput() vmcommon.VMInput
-	GetSCAddress() []byte
-	WriteLog(addr []byte, topics [][]byte, data []byte)
-	Transfer(destination []byte, sender []byte, value *big.Int, input []byte, gas int64) (gasLeft int64, err error)
-	SignalUserError()
-	Finish(data []byte)
-
-	BigInsertInt64(smallValue int64) BigIntHandle
-	BigUpdate(destination BigIntHandle, newValue *big.Int)
-	BigGet(reference BigIntHandle) *big.Int
-	BigByteLength(reference BigIntHandle) int32
-	BigGetBytes(reference BigIntHandle) []byte
-	BigSetBytes(destination BigIntHandle, bytes []byte)
-	BigIsInt64(destination BigIntHandle) bool
-	BigGetInt64(destination BigIntHandle) int64
-	BigSetInt64(destination BigIntHandle, value int64)
-	BigAdd(destination, op1, op2 BigIntHandle)
-	BigSub(destination, op1, op2 BigIntHandle)
-	BigMul(destination, op1, op2 BigIntHandle)
-	BigCmp(op1, op2 BigIntHandle) int
-}
-
 func ElrondEImports() (*wasmer.Imports, error) {
 	imports := wasmer.NewImports()
+	imports = imports.Namespace("env")
 
 	imports, err := imports.Append("getOwner", getOwner, C.getOwner)
 	if err != nil {
@@ -114,12 +69,12 @@ func ElrondEImports() (*wasmer.Imports, error) {
 		return nil, err
 	}
 
-	imports, err = imports.Append("getBlockHash", getBlockHash, C.getBlockHash)
+	imports, err = imports.Append("getBlockHash", blockHash, C.blockHash)
 	if err != nil {
 		return nil, err
 	}
 
-	imports, err = imports.Append("transfer", transfer, C.transfer)
+	imports, err = imports.Append("transferValue", transferValue, C.transferValue)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +109,7 @@ func ElrondEImports() (*wasmer.Imports, error) {
 		return nil, err
 	}
 
-	imports, err = imports.Append("getCallValue", getCallValue, C.getCallValue)
+	imports, err = imports.Append("getCallValue", callValue, C.callValue)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +119,7 @@ func ElrondEImports() (*wasmer.Imports, error) {
 		return nil, err
 	}
 
-	imports, err = imports.Append("finish", finish, C.finish)
+	imports, err = imports.Append("finish", returnData, C.returnData)
 	if err != nil {
 		return nil, err
 	}
@@ -175,6 +130,56 @@ func ElrondEImports() (*wasmer.Imports, error) {
 	}
 
 	imports, err = imports.Append("getBlockTimestamp", getBlockTimestamp, C.getBlockTimestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("getBlockNonce", getBlockNonce, C.getBlockNonce)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("getBlockRound", getBlockRound, C.getBlockRound)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("getBlockEpoch", getBlockEpoch, C.getBlockEpoch)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("getBlockRandomSeed", getBlockRandomSeed, C.getBlockRandomSeed)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("getStateRootHash", getStateRootHash, C.getStateRootHash)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("getPrevBlockTimestamp", getPrevBlockTimestamp, C.getPrevBlockTimestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("getPrevBlockNonce", getPrevBlockNonce, C.getPrevBlockNonce)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("getPrevBlockRound", getPrevBlockRound, C.getPrevBlockRound)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("getPrevBlockEpoch", getPrevBlockEpoch, C.getPrevBlockEpoch)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("getPrevBlockRandomSeed", getPrevBlockRandomSeed, C.getPrevBlockRandomSeed)
 	if err != nil {
 		return nil, err
 	}
@@ -190,101 +195,6 @@ func ElrondEImports() (*wasmer.Imports, error) {
 	}
 
 	imports, err = imports.Append("int64storageStore", int64storageStore, C.int64storageStore)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("int64storageLoad", int64storageLoad, C.int64storageLoad)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("int64finish", int64finish, C.int64finish)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntNew", bigIntNew, C.bigIntNew)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntByteLength", bigIntByteLength, C.bigIntByteLength)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntGetBytes", bigIntGetBytes, C.bigIntGetBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntSetBytes", bigIntSetBytes, C.bigIntSetBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntIsInt64", bigIntIsInt64, C.bigIntIsInt64)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntGetInt64", bigIntGetInt64, C.bigIntGetInt64)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntSetInt64", bigIntSetInt64, C.bigIntSetInt64)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntAdd", bigIntAdd, C.bigIntAdd)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntSub", bigIntSub, C.bigIntSub)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntMul", bigIntMul, C.bigIntMul)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntCmp", bigIntCmp, C.bigIntCmp)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntFinish", bigIntFinish, C.bigIntFinish)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntstorageStore", bigIntstorageStore, C.bigIntstorageStore)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntstorageLoad", bigIntstorageLoad, C.bigIntstorageLoad)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntgetArgument", bigIntgetArgument, C.bigIntgetArgument)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntgetCallValue", bigIntgetCallValue, C.bigIntgetCallValue)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("bigIntgetExternalBalance", bigIntgetExternalBalance, C.bigIntgetExternalBalance)
 	if err != nil {
 		return nil, err
 	}
