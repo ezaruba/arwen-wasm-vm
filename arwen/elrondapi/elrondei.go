@@ -52,7 +52,8 @@ import (
 	"math/big"
 	"unsafe"
 
-	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
+	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
+
 	"github.com/ElrondNetwork/go-ext-wasm/wasmer"
 )
 
@@ -663,7 +664,8 @@ func int64finish(context unsafe.Pointer, value int64) {
 //export debugPrintBigInt
 func debugPrintBigInt(context unsafe.Pointer, handle int32) {
 	instCtx := wasmer.IntoInstanceContext(context)
-	hostContext := getHostContext(instCtx.Data())
+	hostContext := arwen.GetErdContext(instCtx.Data())
+	
 	output := hostContext.BigGetBytes(handle)
 	fmt.Printf(">>> BigInt: %s\n", big.NewInt(0).SetBytes(output).String())
 }
