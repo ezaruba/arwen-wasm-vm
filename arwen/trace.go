@@ -4,12 +4,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
 )
 
 // Trace represents a temporary storage used for data useful in debugging the VM and smart contracts.
@@ -113,4 +114,35 @@ func DisplayVMOutput(output *vmcommon.VMOutput) {
 		fmt.Println("Topics end")
 	}
 	fmt.Println("============================================")
+}
+
+func TraceCall(functionName string) {
+	fmt.Printf("%s()\n", functionName)
+}
+
+func TraceReturn(returned interface{}) {
+	fmt.Printf("\tReturn: %s\n", returned)
+}
+
+func TraceBytesVar(name string, value []byte) {
+	encoded := hex.EncodeToString(value)
+	TraceVar(name, encoded)
+}
+
+func TraceBigIntVar(name string, value interface{}) {
+	// str := ""
+	// typeOf := value.(type)
+
+	// switch typeOf := value.(type) {
+	// default:
+	// 	str = "unknown type: "
+	// case []byte:
+	// 	str = big.NewInt(0).SetBytes(value.([]byte)).String()
+	// }
+
+	// TraceVar(name, str)
+}
+
+func TraceVar(name string, value string) {
+	fmt.Printf("\tvar %s = %s\n", name, value)
 }

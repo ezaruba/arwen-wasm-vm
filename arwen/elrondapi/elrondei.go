@@ -210,29 +210,37 @@ func ElrondEImports() (*wasmer.Imports, error) {
 
 //export getGasLeft
 func getGasLeft(context unsafe.Pointer) int64 {
+	arwen.TraceCall("getGasLeft")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetGasLeft
 	hostContext.UseGas(gasToUse)
 
+	arwen.TraceReturn(hostContext.GasLeft())
 	return int64(hostContext.GasLeft())
 }
 
 //export getOwner
 func getOwner(context unsafe.Pointer, resultOffset int32) {
+	arwen.TraceCall("getOwner")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	owner := hostContext.GetSCAddress()
+	arwen.TraceBytesVar("owner", owner)
 	_ = arwen.StoreBytes(instCtx.Memory(), resultOffset, owner)
-
+	
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetOwner
 	hostContext.UseGas(gasToUse)
 }
 
 //export signalError
 func signalError(context unsafe.Pointer) {
+	arwen.TraceCall("signalError")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -244,11 +252,15 @@ func signalError(context unsafe.Pointer) {
 
 //export getExternalBalance
 func getExternalBalance(context unsafe.Pointer, addressOffset int32, resultOffset int32) {
+	arwen.TraceCall("getExternalBalance")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	address := arwen.LoadBytes(instCtx.Memory(), addressOffset, arwen.AddressLen)
 	balance := hostContext.GetBalance(address)
+	arwen.TraceBytesVar("address", address)
+	arwen.TraceBigIntVar("balance", balance)
 
 	_ = arwen.StoreBytes(instCtx.Memory(), resultOffset, balance)
 
