@@ -39,6 +39,7 @@ package arwen
 // extern int32_t int64storageStore(void *context, int32_t keyOffset, long long value);
 // extern long long int64storageLoad(void *context, int32_t keyOffset);
 // extern void int64finish(void* context, long long value);
+//
 // extern void debugPrintInt64(void* context, long long value);
 // extern void debugPrintInt32(void* context, int32_t value);
 // extern void debugPrintBytes(void* context, int32_t byteOffset, int32_t byteLength);
@@ -195,6 +196,16 @@ func ElrondEImports() (*wasmer.Imports, error) {
 	}
 
 	imports, err = imports.Append("int64storageStore", int64storageStore, C.int64storageStore)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("int64storageLoad", int64storageLoad, C.int64storageLoad)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("int64finish", int64finish, C.int64finish)
 	if err != nil {
 		return nil, err
 	}
