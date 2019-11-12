@@ -40,6 +40,7 @@ package elrondapi
 // extern long long int64storageLoad(void *context, int32_t keyOffset);
 // extern void int64finish(void* context, long long value);
 //
+// extern void debugPrintBigInt(void* context, int32_t handle);
 // extern void debugPrintInt64(void* context, long long value);
 // extern void debugPrintInt32(void* context, int32_t value);
 // extern void debugPrintBytes(void* context, int32_t byteOffset, int32_t byteLength);
@@ -664,9 +665,9 @@ func int64finish(context unsafe.Pointer, value int64) {
 //export debugPrintBigInt
 func debugPrintBigInt(context unsafe.Pointer, handle int32) {
 	instCtx := wasmer.IntoInstanceContext(context)
-	hostContext := arwen.GetErdContext(instCtx.Data())
+	hostContext := arwen.GetBigIntContext(instCtx.Data())
 	
-	output := hostContext.BigGetBytes(handle)
+	output := hostContext.GetOne(handle).Bytes()
 	fmt.Printf(">>> BigInt: %s\n", big.NewInt(0).SetBytes(output).String())
 }
 
