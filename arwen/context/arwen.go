@@ -85,6 +85,11 @@ func NewArwenVM(
 		return nil, err
 	}
 
+	imports, err = elrondapi.DebugImports(imports)
+	if err != nil {
+		return nil, err
+	}
+
 	gasCostConfig, err := config.CreateGasConfig(gasSchedule)
 	if err != nil {
 		return nil, err

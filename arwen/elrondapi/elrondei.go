@@ -39,17 +39,9 @@ package elrondapi
 // extern int32_t int64storageStore(void *context, int32_t keyOffset, long long value);
 // extern long long int64storageLoad(void *context, int32_t keyOffset);
 // extern void int64finish(void* context, long long value);
-//
-// extern void debugPrintBigInt(void* context, int32_t handle);
-// extern void debugPrintInt64(void* context, long long value);
-// extern void debugPrintInt32(void* context, int32_t value);
-// extern void debugPrintBytes(void* context, int32_t byteOffset, int32_t byteLength);
-// extern void debugPrintString(void* context, int32_t byteOffset, int32_t byteLength);
 import "C"
 
 import (
-	"encoding/hex"
-	"fmt"
 	"math/big"
 	"unsafe"
 
@@ -208,31 +200,6 @@ func ElrondEImports() (*wasmer.Imports, error) {
 	}
 
 	imports, err = imports.Append("int64finish", int64finish, C.int64finish)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("debugPrintBigInt", debugPrintBigInt, C.debugPrintBigInt)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("debugPrintInt64", debugPrintInt64, C.debugPrintInt64)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("debugPrintInt32", debugPrintInt32, C.debugPrintInt32)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("debugPrintBytes", debugPrintBytes, C.debugPrintBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	imports, err = imports.Append("debugPrintString", debugPrintString, C.debugPrintString)
 	if err != nil {
 		return nil, err
 	}
@@ -660,37 +627,4 @@ func int64finish(context unsafe.Pointer, value int64) {
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.Int64Finish
 	hostContext.UseGas(gasToUse)
-}
-
-//export debugPrintBigInt
-func debugPrintBigInt(context unsafe.Pointer, handle int32) {
-	instCtx := wasmer.IntoInstanceContext(context)
-	hostContext := arwen.GetBigIntContext(instCtx.Data())
-	
-	output := hostContext.GetOne(handle).Bytes()
-	fmt.Printf(">>> BigInt: %s\n", big.NewInt(0).SetBytes(output).String())
-}
-
-//export debugPrintInt64
-func debugPrintInt64(context unsafe.Pointer, value int64) {
-	fmt.Printf(">>> Int64: %d\n", value)
-}
-
-//export debugPrintInt32
-func debugPrintInt32(context unsafe.Pointer, value int32) {
-	fmt.Printf(">>> Int32: %d\n", value)
-}
-
-//export debugPrintBytes
-func debugPrintBytes(context unsafe.Pointer, byteOffset int32, byteLength int32) {
-	instCtx := wasmer.IntoInstanceContext(context)
-	bytes := arwen.LoadBytes(instCtx.Memory(), byteOffset, byteLength)
-	fmt.Printf(">>> Bytes: %s\n", hex.EncodeToString(bytes))
-}
-
-//export debugPrintString
-func debugPrintString(context unsafe.Pointer, byteOffset int32, byteLength int32) {
-	instCtx := wasmer.IntoInstanceContext(context)
-	bytes := arwen.LoadBytes(instCtx.Memory(), byteOffset, byteLength)
-	fmt.Printf(">>> String: \"%s\"\n", string(bytes))
 }
