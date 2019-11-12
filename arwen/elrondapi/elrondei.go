@@ -1,4 +1,4 @@
-package arwen
+package elrondapi
 
 // // Declare the function signatures (see [cgo](https://golang.org/cmd/cgo/)).
 //
