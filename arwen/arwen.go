@@ -219,8 +219,13 @@ func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (
 		return host.createVMOutputInCaseOfError(vmcommon.FunctionWrongSignature), nil
 	}
 
-	convertedResult := convertReturnValue(result)
-	gasLeft = gasLeft - int64(instance.GetPointsUsed())
+	if host.returnCode != vmcommon.Ok {
+		// user error: signalError()
+		return host.createVMOutputInCaseOfError(host.returnCode), nil
+	}
+
+	convertedResult := arwen.ConvertReturnValue(result)
+	gasLeft = gasLeft - int64(host.instance.GetPointsUsed())
 	vmOutput := host.createVMOutput(convertedResult.Bytes(), gasLeft)
 	globalTrace.PutVMOutput(host.scAddress, vmOutput)
 	displayVMOutput(vmOutput)
