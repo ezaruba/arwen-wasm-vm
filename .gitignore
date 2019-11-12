@@ -14,3 +14,7 @@
 /vendor
 
 /arwen/debug
+/cmd/test/test
+
+# VSCode settings
+.vscode
