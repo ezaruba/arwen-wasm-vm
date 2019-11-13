@@ -213,14 +213,10 @@ func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (
 		return host.createVMOutputInCaseOfError(vmcommon.UserError), nil
 	}
 
-	function, ok := host.instance.Exports[host.callFunction]
-	if !ok {
-		if host.isEthContractCall() {
-			function, _ = host.instance.Exports["main"]
-		} else {
-			fmt.Println("arwen Error", "Function not found")
-			return host.createVMOutputInCaseOfError(vmcommon.FunctionNotFound), nil
-		}
+	function, err := host.getFunctionToCall()
+	if err != nil {
+		fmt.Println("arwen Error", err.Error())
+		return host.createVMOutputInCaseOfError(vmcommon.FunctionNotFound), nil
 	}
 
 	result, err := function()
@@ -249,11 +245,20 @@ func (host *vmContext) createVMOutputInCaseOfError(errCode vmcommon.ReturnCode) 
 	return vmOutput
 }
 
-func (host *vmContext) isEthContractCall() bool {
+func (host *vmContext) getFunctionToCall() (func(...interface{}) (wasmer.Value, error), error) {
 	exports := host.instance.Exports
-	hasSingleExport := len(exports) == 1
-	_, hasExportedMain := exports["main"]
-	return hasSingleExport && hasExportedMain
+
+	function, ok := exports[host.callFunction]
+
+	if !ok {
+		function, ok = exports["main"]
+	}
+
+	if !ok {
+		return nil, ErrFunctionNonFound
+	}
+
+	return function, nil
 }
 
 // adapt vm output and all saved data from sc run into VM Output
