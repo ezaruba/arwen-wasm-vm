@@ -1,4 +1,4 @@
-package arwen
+package debugging
 
 import (
 	"encoding/hex"
@@ -145,4 +145,10 @@ func TraceBigIntVar(name string, value interface{}) {
 
 func TraceVar(name string, value string) {
 	fmt.Printf("\tvar %s = %s\n", name, value)
+}
+
+func TraceErr(context string, err error) {
+	if err != nil {
+		fmt.Printf("\t%s: %s\n", context, err.Error())
+	}
 }

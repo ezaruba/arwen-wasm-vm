@@ -9,6 +9,7 @@ import (
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/crypto"
+	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/debugging"
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/elrondapi"
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/ethapi"
 	"github.com/ElrondNetwork/arwen-wasm-vm/config"
@@ -85,7 +86,7 @@ func NewArwenVM(
 		return nil, err
 	}
 
-	imports, err = elrondapi.DebugImports(imports)
+	imports, err = debugging.DebugImports(imports)
 	if err != nil {
 		return nil, err
 	}
@@ -232,8 +233,8 @@ func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (
 	convertedResult := arwen.ConvertReturnValue(result)
 	gasLeft = gasLeft - int64(host.instance.GetPointsUsed())
 	vmOutput := host.createVMOutput(convertedResult.Bytes(), gasLeft)
-	arwen.GlobalTrace.PutVMOutput(host.scAddress, vmOutput)
-	arwen.DisplayVMOutput(vmOutput)
+	debugging.GlobalTrace.PutVMOutput(host.scAddress, vmOutput)
+	debugging.DisplayVMOutput(vmOutput)
 
 	return vmOutput, nil
 }

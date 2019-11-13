@@ -1,4 +1,4 @@
-package elrondapi
+package debugging
 
 // // Declare the function signatures (see [cgo](https://golang.org/cmd/cgo/)).
 //
