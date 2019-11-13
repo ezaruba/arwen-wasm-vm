@@ -46,6 +46,7 @@ import (
 	"unsafe"
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
+	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/debugging"
 
 	"github.com/ElrondNetwork/go-ext-wasm/wasmer"
 )
@@ -210,7 +211,7 @@ func ElrondEImports() (*wasmer.Imports, error) {
 
 //export getGasLeft
 func getGasLeft(context unsafe.Pointer) int64 {
-	arwen.TraceCall("getGasLeft")
+	debugging.TraceCall("getGasLeft")
 
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
@@ -218,19 +219,19 @@ func getGasLeft(context unsafe.Pointer) int64 {
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetGasLeft
 	hostContext.UseGas(gasToUse)
 
-	arwen.TraceReturn(hostContext.GasLeft())
+	debugging.TraceReturnUint64(hostContext.GasLeft())
 	return int64(hostContext.GasLeft())
 }
 
 //export getOwner
 func getOwner(context unsafe.Pointer, resultOffset int32) {
-	arwen.TraceCall("getOwner")
+	debugging.TraceCall("getOwner")
 
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	owner := hostContext.GetSCAddress()
-	arwen.TraceBytesVar("owner", owner)
+	debugging.TraceVarBytes("owner", owner)
 	_ = arwen.StoreBytes(instCtx.Memory(), resultOffset, owner)
 	
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetOwner
@@ -239,7 +240,7 @@ func getOwner(context unsafe.Pointer, resultOffset int32) {
 
 //export signalError
 func signalError(context unsafe.Pointer) {
-	arwen.TraceCall("signalError")
+	debugging.TraceCall("signalError")
 
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
@@ -252,15 +253,15 @@ func signalError(context unsafe.Pointer) {
 
 //export getExternalBalance
 func getExternalBalance(context unsafe.Pointer, addressOffset int32, resultOffset int32) {
-	arwen.TraceCall("getExternalBalance")
+	debugging.TraceCall("getExternalBalance")
 
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	address := arwen.LoadBytes(instCtx.Memory(), addressOffset, arwen.AddressLen)
 	balance := hostContext.GetBalance(address)
-	arwen.TraceBytesVar("address", address)
-	arwen.TraceBigIntVar("balance", balance)
+	debugging.TraceVarBytes("address", address)
+	debugging.TraceVarBigIntBytes("balance", balance)
 
 	_ = arwen.StoreBytes(instCtx.Memory(), resultOffset, balance)
 
@@ -270,6 +271,8 @@ func getExternalBalance(context unsafe.Pointer, addressOffset int32, resultOffse
 
 //export blockHash
 func blockHash(context unsafe.Pointer, nonce int64, resultOffset int32) int32 {
+	debugging.TraceCall("blockHash")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -279,15 +282,20 @@ func blockHash(context unsafe.Pointer, nonce int64, resultOffset int32) int32 {
 	//TODO: change blockchain hook to treat actual nonce - not the offset.
 	hash := hostContext.BlockHash(nonce)
 	err := arwen.StoreBytes(instCtx.Memory(), resultOffset, hash)
+	debugging.TraceErr("StoreBytes", err)
 	if err != nil {
 		return 1
 	}
+
+	debugging.TraceVarBytes("hash", hash)
 
 	return 0
 }
 
 //export transferValue
 func transferValue(context unsafe.Pointer, gasLimit int64, sndOffset int32, destOffset int32, valueOffset int32, dataOffset int32, length int32) int32 {
+	debugging.TraceCall("transferValue")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -299,9 +307,11 @@ func transferValue(context unsafe.Pointer, gasLimit int64, sndOffset int32, dest
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.TransferValue
 	gasToUse += hostContext.GasSchedule().BaseOperationCost.StorePerByte * uint64(length)
 	hostContext.UseGas(gasToUse)
+	debugging.TraceVarUint64("gasToUse", gasToUse)
 
 	_, err := hostContext.Transfer(dest, send, big.NewInt(0).SetBytes(value), data, gasLimit)
-	if err != nil {
+	debugging.TraceErr("Transfer", err)
+	if err != nil {	
 		return 1
 	}
 
@@ -310,6 +320,8 @@ func transferValue(context unsafe.Pointer, gasLimit int64, sndOffset int32, dest
 
 //export getArgument
 func getArgument(context unsafe.Pointer, id int32, argOffset int32) int32 {
+	debugging.TraceCall("getArgument")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -318,19 +330,26 @@ func getArgument(context unsafe.Pointer, id int32, argOffset int32) int32 {
 
 	args := hostContext.Arguments()
 	if int32(len(args)) <= id {
+		debugging.TraceErrMessage("invalid argument id")
 		return -1
 	}
 
+	debugging.TraceVarBytes("argAsBytes", args[id].Bytes())
+	debugging.TraceVarBigIntBytes("argAsBigInt", args[id].Bytes())
 	err := arwen.StoreBytes(instCtx.Memory(), argOffset, args[id].Bytes())
+	debugging.TraceErr("StoreBytes", err)
 	if err != nil {
 		return -1
 	}
 
+	debugging.TraceReturnInt32(int32(len(args[id].Bytes())))
 	return int32(len(args[id].Bytes()))
 }
 
 //export getFunction
 func getFunction(context unsafe.Pointer, functionOffset int32) int32 {
+	debugging.TraceCall("getFunction")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -338,66 +357,92 @@ func getFunction(context unsafe.Pointer, functionOffset int32) int32 {
 	hostContext.UseGas(gasToUse)
 
 	function := hostContext.Function()
+	debugging.TraceVarString("function", function)
 	err := arwen.StoreBytes(instCtx.Memory(), functionOffset, []byte(function))
+	debugging.TraceErr("StoreBytes", err)
 	if err != nil {
 		return -1
 	}
 
-	return int32(len(function))
+	result := int32(len(function))
+	debugging.TraceReturnInt32(result)
+	return result
 }
 
 //export getNumArguments
 func getNumArguments(context unsafe.Pointer) int32 {
+	debugging.TraceCall("getNumArguments")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetNumArguments
 	hostContext.UseGas(gasToUse)
 
-	return int32(len(hostContext.Arguments()))
+	result := int32(len(hostContext.Arguments()))
+	debugging.TraceReturnInt32(result)
+	return result
 }
 
 //export storageStore
 func storageStore(context unsafe.Pointer, keyOffset int32, dataOffset int32, dataLength int32) int32 {
+	debugging.TraceCall("storageStore")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	key := arwen.LoadBytes(instCtx.Memory(), keyOffset, arwen.HashLen)
 	data := arwen.LoadBytes(instCtx.Memory(), dataOffset, dataLength)
+	debugging.TraceVarBytes("key", key)
+	debugging.TraceVarBytes("data", data)
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.StorageStore
 	gasToUse += hostContext.GasSchedule().BaseOperationCost.StorePerByte * uint64(dataLength)
 	hostContext.UseGas(gasToUse)
+	debugging.TraceVarUint64("gasToUse", gasToUse)
 
-	return hostContext.SetStorage(hostContext.GetSCAddress(), key, data)
+	result := hostContext.SetStorage(hostContext.GetSCAddress(), key, data)
+	debugging.TraceReturnInt32(result)
+	return result
 }
 
 //export storageLoad
 func storageLoad(context unsafe.Pointer, keyOffset int32, dataOffset int32) int32 {
+	debugging.TraceCall("storageLoad")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	key := arwen.LoadBytes(instCtx.Memory(), keyOffset, arwen.HashLen)
 	data := hostContext.GetStorage(hostContext.GetSCAddress(), key)
+	debugging.TraceVarBytes("key", key)
+	debugging.TraceVarBytes("data", data)
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.StorageLoad
 	gasToUse += hostContext.GasSchedule().BaseOperationCost.DataCopyPerByte * uint64(len(data))
 	hostContext.UseGas(gasToUse)
+	debugging.TraceVarUint64("gasToUse", gasToUse)
 
 	err := arwen.StoreBytes(instCtx.Memory(), dataOffset, data)
+	debugging.TraceErr("StoreBytes", err)
 	if err != nil {
 		return -1
 	}
 
-	return int32(len(data))
+	result := int32(len(data))
+	debugging.TraceReturnInt32(result)
+	return result
 }
 
 //export getCaller
 func getCaller(context unsafe.Pointer, resultOffset int32) {
+	debugging.TraceCall("getCaller")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	caller := hostContext.GetVMInput().CallerAddr
+	debugging.TraceVarBytes("caller", caller)
 
 	_ = arwen.StoreBytes(instCtx.Memory(), resultOffset, caller)
 
@@ -407,6 +452,8 @@ func getCaller(context unsafe.Pointer, resultOffset int32) {
 
 //export callValue
 func callValue(context unsafe.Pointer, resultOffset int32) int32 {
+	debugging.TraceCall("callValue")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -417,19 +464,26 @@ func callValue(context unsafe.Pointer, resultOffset int32) int32 {
 		invBytes[length-i-1] = value[i]
 	}
 
+	debugging.TraceVarBigIntBytes("value", value)
+
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetCallValue
 	hostContext.UseGas(gasToUse)
 
 	err := arwen.StoreBytes(instCtx.Memory(), resultOffset, invBytes)
+	debugging.TraceErr("StoreBytes", err)
 	if err != nil {
 		return -1
 	}
 
-	return int32(length)
+	result := int32(length)
+	debugging.TraceReturnInt32(result)
+	return result
 }
 
 //export writeLog
 func writeLog(context unsafe.Pointer, pointer int32, length int32, topicPtr int32, numTopics int32) {
+	debugging.TraceCall("writeLog")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -438,6 +492,7 @@ func writeLog(context unsafe.Pointer, pointer int32, length int32, topicPtr int3
 	topics := make([][]byte, numTopics)
 	for i := int32(0); i < numTopics; i++ {
 		topics[i] = arwen.LoadBytes(instCtx.Memory(), topicPtr+i*arwen.HashLen, arwen.HashLen)
+		debugging.TraceVarBytes("topic[]", topics[i])
 	}
 
 	hostContext.WriteLog(hostContext.GetSCAddress(), topics, log)
@@ -445,54 +500,73 @@ func writeLog(context unsafe.Pointer, pointer int32, length int32, topicPtr int3
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.Log
 	gasToUse += hostContext.GasSchedule().BaseOperationCost.StorePerByte * uint64(numTopics*arwen.HashLen+length)
 	hostContext.UseGas(gasToUse)
+	debugging.TraceVarUint64("gasToUse", gasToUse)
 }
 
 //export getBlockTimestamp
 func getBlockTimestamp(context unsafe.Pointer) int64 {
+	debugging.TraceCall("getBlockTimestamp")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetBlockTimeStamp
 	hostContext.UseGas(gasToUse)
 
-	return int64(hostContext.BlockChainHook().CurrentTimeStamp())
+	result := int64(hostContext.BlockChainHook().CurrentTimeStamp())
+	debugging.TraceReturnInt64(result)
+	return result
 }
 
 //export getBlockNonce
 func getBlockNonce(context unsafe.Pointer) int64 {
+	debugging.TraceCall("getBlockNonce")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetBlockNonce
 	hostContext.UseGas(gasToUse)
 
-	return int64(hostContext.BlockChainHook().CurrentNonce())
+	result := int64(hostContext.BlockChainHook().CurrentNonce())
+	debugging.TraceReturnInt64(result)
+	return result
 }
 
 //export getBlockRound
 func getBlockRound(context unsafe.Pointer) int64 {
+	debugging.TraceCall("getBlockRound")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetBlockRound
 	hostContext.UseGas(gasToUse)
 
-	return int64(hostContext.BlockChainHook().CurrentRound())
+	result := int64(hostContext.BlockChainHook().CurrentRound())
+	debugging.TraceReturnInt64(result)
+	return result
 }
 
 //export getBlockEpoch
 func getBlockEpoch(context unsafe.Pointer) int64 {
+	debugging.TraceCall("getBlockEpoch")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetBlockEpoch
 	hostContext.UseGas(gasToUse)
 
-	return int64(hostContext.BlockChainHook().CurrentEpoch())
+	result := int64(hostContext.BlockChainHook().CurrentEpoch())
+	debugging.TraceReturnInt64(result)
+	return result
 }
 
 //export getBlockRandomSeed
 func getBlockRandomSeed(context unsafe.Pointer, pointer int32) {
+	debugging.TraceCall("getBlockRandomSeed")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -500,11 +574,14 @@ func getBlockRandomSeed(context unsafe.Pointer, pointer int32) {
 	hostContext.UseGas(gasToUse)
 
 	randomSeed := hostContext.BlockChainHook().CurrentRandomSeed()
+	debugging.TraceVarBytes("randomSeed", randomSeed)
 	_ = arwen.StoreBytes(instCtx.Memory(), pointer, randomSeed)
 }
 
 //export getStateRootHash
 func getStateRootHash(context unsafe.Pointer, pointer int32) {
+	debugging.TraceCall("getStateRootHash")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -512,55 +589,74 @@ func getStateRootHash(context unsafe.Pointer, pointer int32) {
 	hostContext.UseGas(gasToUse)
 
 	stateRootHash := hostContext.BlockChainHook().GetStateRootHash()
+	debugging.TraceVarBytes("randomSeed", stateRootHash)
 	_ = arwen.StoreBytes(instCtx.Memory(), pointer, stateRootHash)
 }
 
 //export getPrevBlockTimestamp
 func getPrevBlockTimestamp(context unsafe.Pointer) int64 {
+	debugging.TraceCall("getPrevBlockTimestamp")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetBlockTimeStamp
 	hostContext.UseGas(gasToUse)
 
-	return int64(hostContext.BlockChainHook().LastTimeStamp())
+	result := int64(hostContext.BlockChainHook().LastTimeStamp())
+	debugging.TraceReturnInt64(result)
+	return result
 }
 
 //export getPrevBlockNonce
 func getPrevBlockNonce(context unsafe.Pointer) int64 {
+	debugging.TraceCall("getPrevBlockNonce")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetBlockNonce
 	hostContext.UseGas(gasToUse)
 
-	return int64(hostContext.BlockChainHook().LastNonce())
+	result := int64(hostContext.BlockChainHook().LastNonce())
+	debugging.TraceReturnInt64(result)
+	return result
 }
 
 //export getPrevBlockRound
 func getPrevBlockRound(context unsafe.Pointer) int64 {
+	debugging.TraceCall("getPrevBlockRound")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetBlockRound
 	hostContext.UseGas(gasToUse)
 
-	return int64(hostContext.BlockChainHook().LastRound())
+	result := int64(hostContext.BlockChainHook().LastRound())
+	debugging.TraceReturnInt64(result)
+	return result
 }
 
 //export getPrevBlockEpoch
 func getPrevBlockEpoch(context unsafe.Pointer) int64 {
+	debugging.TraceCall("getPrevBlockEpoch")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.GetBlockEpoch
 	hostContext.UseGas(gasToUse)
 
-	return int64(hostContext.BlockChainHook().LastEpoch())
+	result := int64(hostContext.BlockChainHook().LastEpoch())
+	debugging.TraceReturnInt64(result)
+	return result
 }
 
 //export getPrevBlockRandomSeed
 func getPrevBlockRandomSeed(context unsafe.Pointer, pointer int32) {
+	debugging.TraceCall("getPrevBlockRandomSeed")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -568,16 +664,20 @@ func getPrevBlockRandomSeed(context unsafe.Pointer, pointer int32) {
 	hostContext.UseGas(gasToUse)
 
 	randomSeed := hostContext.BlockChainHook().LastRandomSeed()
+	debugging.TraceVarBytes("randomSeed", randomSeed)
 	_ = arwen.StoreBytes(instCtx.Memory(), pointer, randomSeed)
 }
 
 //export returnData
 func returnData(context unsafe.Pointer, pointer int32, length int32) {
+	debugging.TraceCall("returnData")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	data := arwen.LoadBytes(instCtx.Memory(), pointer, length)
 	hostContext.Finish(data)
+	debugging.TraceVarBytes("data", data)
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.Finish
 	gasToUse += hostContext.GasSchedule().BaseOperationCost.StorePerByte * uint64(length)
@@ -586,6 +686,8 @@ func returnData(context unsafe.Pointer, pointer int32, length int32) {
 
 //export int64getArgument
 func int64getArgument(context unsafe.Pointer, id int32) int64 {
+	debugging.TraceCall("int64getArgument")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -597,25 +699,34 @@ func int64getArgument(context unsafe.Pointer, id int32) int64 {
 		return -1
 	}
 
-	return args[id].Int64()
+	result := args[id].Int64()
+	debugging.TraceReturnInt64(result)
+	return result
 }
 
 //export int64storageStore
 func int64storageStore(context unsafe.Pointer, keyOffset int32, value int64) int32 {
+	debugging.TraceCall("int64storageStore")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
 	key := arwen.LoadBytes(instCtx.Memory(), keyOffset, arwen.HashLen)
 	data := big.NewInt(value)
+	debugging.TraceVarBigInt("data", data)
 
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.Int64StorageStore
 	hostContext.UseGas(gasToUse)
 
-	return hostContext.SetStorage(hostContext.GetSCAddress(), key, data.Bytes())
+	result := hostContext.SetStorage(hostContext.GetSCAddress(), key, data.Bytes())
+	debugging.TraceReturnInt32(result)
+	return result
 }
 
 //export int64storageLoad
 func int64storageLoad(context unsafe.Pointer, keyOffset int32) int64 {
+	debugging.TraceCall("int64storageLoad")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 
@@ -627,11 +738,15 @@ func int64storageLoad(context unsafe.Pointer, keyOffset int32) int64 {
 	gasToUse := hostContext.GasSchedule().ElrondAPICost.Int64StorageLoad
 	hostContext.UseGas(gasToUse)
 
-	return bigInt.Int64()
+	result := bigInt.Int64()
+	debugging.TraceReturnInt64(result)
+	return result
 }
 
 //export int64finish
 func int64finish(context unsafe.Pointer, value int64) {
+	debugging.TraceCall("int64finish")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())
 

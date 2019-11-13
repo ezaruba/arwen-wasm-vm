@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
@@ -120,35 +122,47 @@ func TraceCall(functionName string) {
 	fmt.Printf("%s()\n", functionName)
 }
 
-func TraceReturn(returned interface{}) {
-	fmt.Printf("\tReturn: %s\n", returned)
+func TraceReturnInt32(returned int32) {
+	fmt.Printf("\tReturn: %d\n", returned)
 }
 
-func TraceBytesVar(name string, value []byte) {
+func TraceReturnInt64(returned int64) {
+	fmt.Printf("\tReturn: %d\n", returned)
+}
+
+func TraceReturnUint64(returned uint64) {
+	fmt.Printf("\tReturn: %d\n", returned)
+}
+
+func TraceVarBytes(name string, value []byte) {
 	encoded := hex.EncodeToString(value)
-	TraceVar(name, encoded)
+	TraceVarString(name, encoded)
 }
 
-func TraceBigIntVar(name string, value interface{}) {
-	// str := ""
-	// typeOf := value.(type)
-
-	// switch typeOf := value.(type) {
-	// default:
-	// 	str = "unknown type: "
-	// case []byte:
-	// 	str = big.NewInt(0).SetBytes(value.([]byte)).String()
-	// }
-
-	// TraceVar(name, str)
+func TraceVarBigIntBytes(name string, value []byte) {
+	TraceVarBigInt(name, big.NewInt(0).SetBytes(value))
 }
 
-func TraceVar(name string, value string) {
+func TraceVarBigInt(name string, value *big.Int) {
+	str := value.String()
+	TraceVarString(name, str)
+}
+
+func TraceVarUint64(name string, value uint64) {
+	str := strconv.FormatUint(value, 10)
+	TraceVarString(name, str)
+}
+
+func TraceVarString(name string, value string) {
 	fmt.Printf("\tvar %s = %s\n", name, value)
 }
 
 func TraceErr(context string, err error) {
 	if err != nil {
-		fmt.Printf("\t%s: %s\n", context, err.Error())
+		fmt.Printf("\tError (%s): %s\n", context, err.Error())
 	}
+}
+
+func TraceErrMessage(message string) {
+	fmt.Printf("\tError: %s\n", message)
 }
