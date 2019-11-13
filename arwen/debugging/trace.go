@@ -13,17 +13,12 @@ import (
 	"time"
 
 	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
+	"github.com/ElrondNetwork/go-ext-wasm/wasmer"
 )
 
-// Trace represents a temporary storage used for data useful in debugging the VM and smart contracts.
-type Trace struct {
-}
-
-var GlobalTrace = Trace{}
-
-// PutVMOutput saves the VMOutput to a JSON file, ./trace/smart-contracts/[scAddress]/vmOutput_[timestamp].json
+// TraceVMOutput saves the VMOutput to a JSON file, ./trace/smart-contracts/[scAddress]/vmOutput_[timestamp].json
 // If any error occurs, it will be sent to logger.
-func (trace *Trace) PutVMOutput(scAddress []byte, vmOutput *vmcommon.VMOutput) {
+func TraceVMOutput(scAddress []byte, vmOutput *vmcommon.VMOutput) {
 	scAddressEncoded := hex.EncodeToString(scAddress)
 	folder := prepareTraceFolder("smart-contracts", scAddressEncoded)
 	saveToJSON(folder, "vmOutput", vmOutput)
@@ -75,35 +70,53 @@ func serializeToJSON(value interface{}) []byte {
 	return serialized
 }
 
+func DisplayWasmerInstance(instance *wasmer.Instance) {
+	fmt.Print("Exported functions:")
+
+	for key := range instance.Exports {
+		fmt.Print(key, " ")
+	}
+
+	fmt.Println()
+}
+
+func DisplayVMCallInput(input *vmcommon.ContractCallInput) {
+	fmt.Println("Contract Call Input:")
+	fmt.Println("\tFunction: ", input.Function)
+	fmt.Println("\tCaller: ", hex.EncodeToString(input.CallerAddr))
+	fmt.Println("\tCallValue: ", input.CallValue.String())
+	fmt.Println("\tNumber of arguments: ", len(input.Arguments))
+}
+
 func DisplayVMOutput(output *vmcommon.VMOutput) {
-	fmt.Println("=============Resulted VM Output=============")
-	fmt.Println("RetunCode: ", output.ReturnCode)
-	fmt.Println("ReturnData: ", output.ReturnData)
-	fmt.Println("GasRemaining: ", output.GasRemaining)
-	fmt.Println("GasRefund: ", output.GasRefund)
+	fmt.Println("VM Output:")
+	fmt.Println("\tRetunCode: ", output.ReturnCode)
+	fmt.Println("\tReturnData: ", output.ReturnData)
+	fmt.Println("\tGasRemaining: ", output.GasRemaining)
+	fmt.Println("\tGasRefund: ", output.GasRefund)
 
 	for id, touchedAccount := range output.TouchedAccounts {
-		fmt.Println("Touched account ", id, ": "+hex.EncodeToString(touchedAccount))
+		fmt.Println("\tTouched account ", id, ": "+hex.EncodeToString(touchedAccount))
 	}
 
 	for id, deletedAccount := range output.DeletedAccounts {
-		fmt.Println("Deleted account ", id, ": "+hex.EncodeToString(deletedAccount))
+		fmt.Println("\tDeleted account ", id, ": "+hex.EncodeToString(deletedAccount))
 	}
 
 	for id, outputAccount := range output.OutputAccounts {
-		fmt.Println("Output account ", id, ": "+hex.EncodeToString(outputAccount.Address))
+		fmt.Println("\tOutput account ", id, ": "+hex.EncodeToString(outputAccount.Address))
 		if outputAccount.BalanceDelta != nil {
-			fmt.Println("           Balance change with : ", outputAccount.BalanceDelta)
+			fmt.Println("\t\tBalance change with : ", outputAccount.BalanceDelta)
 		}
 		if outputAccount.Nonce != 0 {
-			fmt.Println("           Nonce change to : ", outputAccount.Nonce)
+			fmt.Println("\t\tNonce change to : ", outputAccount.Nonce)
 		}
 		if len(outputAccount.Code) > 0 {
-			fmt.Println("           Code change to : [", len(outputAccount.Code), " bytes]")
+			fmt.Println("\t\tCode change to : [", len(outputAccount.Code), " bytes]")
 		}
 
 		for _, storageUpdate := range outputAccount.StorageUpdates {
-			fmt.Println("           Storage update key: "+hex.EncodeToString(storageUpdate.Offset)+" value: ", storageUpdate.Data)
+			fmt.Println("\t\tStorage update key: "+hex.EncodeToString(storageUpdate.Offset)+" value: ", storageUpdate.Data)
 		}
 	}
 
@@ -115,7 +128,10 @@ func DisplayVMOutput(output *vmcommon.VMOutput) {
 		}
 		fmt.Println("Topics end")
 	}
-	fmt.Println("============================================")
+}
+
+func DisplayVisualSeparator() {
+	fmt.Printf("================================================================")
 }
 
 func TraceCall(functionName string) {

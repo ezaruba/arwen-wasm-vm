@@ -183,7 +183,8 @@ func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInpu
 }
 
 func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (*vmcommon.VMOutput, error) {
-	fmt.Println("arwen.RunSmartContractCall")
+	debugging.DisplayVisualSeparator()
+	debugging.DisplayVMCallInput(input)
 
 	host.initInternalValues()
 	host.vmInput = input.VMInput
@@ -203,6 +204,7 @@ func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (
 		return host.createVMOutputInCaseOfError(vmcommon.ContractInvalid), nil
 	}
 
+	debugging.DisplayWasmerInstance(&host.instance)
 	defer host.instance.Close()
 
 	idContext := arwen.AddHostContext(host)
@@ -233,8 +235,9 @@ func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (
 	convertedResult := arwen.ConvertReturnValue(result)
 	gasLeft = gasLeft - int64(host.instance.GetPointsUsed())
 	vmOutput := host.createVMOutput(convertedResult.Bytes(), gasLeft)
-	debugging.GlobalTrace.PutVMOutput(host.scAddress, vmOutput)
+	debugging.TraceVMOutput(host.scAddress, vmOutput)
 	debugging.DisplayVMOutput(vmOutput)
+	debugging.DisplayVisualSeparator()
 
 	return vmOutput, nil
 }
