@@ -42,6 +42,7 @@ package ethapi
 import "C"
 import (
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
+	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/debugging"
 	"github.com/ElrondNetwork/go-ext-wasm/wasmer"
 	"math/big"
 	"unsafe"
@@ -293,11 +294,18 @@ func ethcall(context unsafe.Pointer, gasLimit int64, addressOffset int32, valueO
 
 //export ethcallDataCopy
 func ethcallDataCopy(context unsafe.Pointer, resultOffset int32, dataOffset int32, length int32) {
+	debugging.TraceCall("ethcallDataCopy")
+	debugging.TraceVarInt32("resultOffset", resultOffset)
+	debugging.TraceVarInt32("dataOffset", dataOffset)
+	debugging.TraceVarInt32("length", length)
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
 	callData := ethContext.CallData()
 	_ = arwen.StoreBytes(instCtx.Memory(), resultOffset, callData[dataOffset:dataOffset+length])
+	debugging.TraceVarBytes("callData", callData)
+	debugging.TraceVarBytes("copyToMemory", callData[dataOffset:dataOffset+length])
 
 	gasToUse := ethContext.GasSchedule().EthAPICost.CallDataCopy
 	gasToUse += ethContext.GasSchedule().BaseOperationCost.DataCopyPerByte * uint64(length)
@@ -306,37 +314,54 @@ func ethcallDataCopy(context unsafe.Pointer, resultOffset int32, dataOffset int3
 
 //export ethgetCallDataSize
 func ethgetCallDataSize(context unsafe.Pointer) int32 {
+	debugging.TraceCall("ethgetCallDataSize")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
 	gasToUse := ethContext.GasSchedule().EthAPICost.GetCallDataSize
 	ethContext.UseGas(gasToUse)
 
-	return int32(len(ethContext.CallData()))
+	result := int32(len(ethContext.CallData()))
+	debugging.TraceReturnInt32(result)
+	return result
 }
 
 //export ethstorageStore
 func ethstorageStore(context unsafe.Pointer, pathOffset int32, valueOffset int32) {
+	debugging.TraceCall("ethstorageStore")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
 	key := arwen.LoadBytes(instCtx.Memory(), pathOffset, arwen.HashLen)
 	data := arwen.LoadBytes(instCtx.Memory(), valueOffset, arwen.HashLen)
+	debugging.TraceVarBytes("key", key)
+	debugging.TraceVarBytes("data", data)
 
 	_ = ethContext.SetStorage(ethContext.GetSCAddress(), key, data)
 
 	gasToUse := ethContext.GasSchedule().EthAPICost.StorageStore
 	gasToUse += ethContext.GasSchedule().BaseOperationCost.StorePerByte * uint64(len(data))
 	ethContext.UseGas(gasToUse)
+	debugging.TraceVarUint64("gasToUse", gasToUse)
 }
 
 //export ethstorageLoad
 func ethstorageLoad(context unsafe.Pointer, pathOffset int32, resultOffset int32) {
+
+	debugging.TraceCall("ethstorageLoad")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
+	debugging.TraceVarInt32("pathOffset", pathOffset)
+	debugging.TraceVarInt32("resultOffset", resultOffset)
+
 	key := arwen.LoadBytes(instCtx.Memory(), pathOffset, arwen.HashLen)
 	data := ethContext.GetStorage(ethContext.GetSCAddress(), key)
+	debugging.TraceVarBytes("key", key)
+	debugging.TraceVarBytes("data", data)
 
 	currInput := make([]byte, arwen.HashLen)
 	copy(currInput[arwen.HashLen-len(data):], data)
@@ -346,6 +371,7 @@ func ethstorageLoad(context unsafe.Pointer, pathOffset int32, resultOffset int32
 	gasToUse := ethContext.GasSchedule().EthAPICost.StorageLoad
 	gasToUse += ethContext.GasSchedule().BaseOperationCost.DataCopyPerByte * uint64(len(data))
 	ethContext.UseGas(gasToUse)
+	debugging.TraceVarUint64("gasToUse", gasToUse)
 }
 
 //export ethgetCaller
@@ -362,6 +388,8 @@ func ethgetCaller(context unsafe.Pointer, resultOffset int32) {
 
 //export ethgetCallValue
 func ethgetCallValue(context unsafe.Pointer, resultOffset int32) {
+	debugging.TraceCall("ethgetCallValue")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -372,6 +400,10 @@ func ethgetCallValue(context unsafe.Pointer, resultOffset int32) {
 		invBytes[length-i-1] = value[i]
 	}
 
+	debugging.TraceVarBytes("value", value)
+	debugging.TraceVarBytes("invBytes", invBytes)
+	debugging.TraceVarInt("length", length)
+
 	_ = arwen.StoreBytes(instCtx.Memory(), resultOffset, invBytes)
 
 	gasToUse := ethContext.GasSchedule().EthAPICost.GetCallValue
@@ -380,6 +412,8 @@ func ethgetCallValue(context unsafe.Pointer, resultOffset int32) {
 
 //export ethcodeCopy
 func ethcodeCopy(context unsafe.Pointer, resultOffset int32, codeOffset int32, length int32) {
+	debugging.TraceCall("ethcodeCopy")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 

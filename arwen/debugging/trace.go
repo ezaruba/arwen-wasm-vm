@@ -166,6 +166,16 @@ func TraceVarBigInt(name string, value *big.Int) {
 	TraceVarString(name, str)
 }
 
+func TraceVarInt(name string, value int) {
+	str := strconv.Itoa(value)
+	TraceVarString(name, str)
+}
+
+func TraceVarInt32(name string, value int32) {
+	str := strconv.FormatInt(int64(value), 10)
+	TraceVarString(name, str)
+}
+
 func TraceVarUint64(name string, value uint64) {
 	str := strconv.FormatUint(value, 10)
 	TraceVarString(name, str)
@@ -183,4 +193,9 @@ func TraceErr(context string, err error) {
 
 func TraceErrMessage(message string) {
 	fmt.Printf("\tError: %s\n", message)
+}
+
+func TraceMemory(memory *wasmer.Memory) {
+	data := memory.Data()
+	_ = ioutil.WriteFile("memory.txt", data, 0644)
 }

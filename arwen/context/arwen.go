@@ -416,6 +416,10 @@ func (host *vmContext) AccountExists(addr []byte) bool {
 }
 
 func (host *vmContext) GetStorage(addr []byte, key []byte) []byte {
+	debugging.TraceCall("arwen.GetStorage")
+	debugging.TraceVarBytes("addr", addr)
+	debugging.TraceVarBytes("key", key)
+
 	strAdr := string(addr)
 	if _, ok := host.storageUpdate[strAdr]; ok {
 		if value, ok := host.storageUpdate[strAdr][string(key)]; ok {
@@ -425,13 +429,18 @@ func (host *vmContext) GetStorage(addr []byte, key []byte) []byte {
 
 	hash, err := host.blockChainHook.GetStorageData(addr, key)
 	if err != nil {
-		fmt.Printf("GetStorage returned with error %s \n", err.Error())
+		fmt.Printf("GetStorage returned with error: %s \n", err.Error())
 	}
 
 	return hash
 }
 
 func (host *vmContext) SetStorage(addr []byte, key []byte, value []byte) int32 {
+	debugging.TraceCall("arwen.SetStorage")
+	debugging.TraceVarBytes("addr", addr)
+	debugging.TraceVarBytes("key", key)
+	debugging.TraceVarBytes("value", value)
+
 	strAdr := string(addr)
 
 	if _, ok := host.storageUpdate[strAdr]; !ok {
@@ -638,11 +647,8 @@ func (host *vmContext) createETHCallInput() []byte {
 		}
 
 		fmt.Println("Function: ", host.callFunction)
-		fmt.Println("Keccak256 of function: ", hashOfFunction)
 
 		methodSelectors, err := hex.DecodeString(hashOfFunction)
-		fmt.Println("Method selector: ", methodSelectors)
-		fmt.Println("Method selector as Int: ", big.NewInt(0).SetBytes(methodSelectors).String())
 
 		if err != nil {
 			return nil
@@ -664,5 +670,6 @@ func (host *vmContext) createETHCallInput() []byte {
 	}
 
 	fmt.Println("New input: ", newInput)
+	debugging.TraceVarBytes("new input, bytes", newInput)
 	return newInput
 }
