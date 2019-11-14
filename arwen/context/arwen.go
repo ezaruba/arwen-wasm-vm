@@ -628,6 +628,7 @@ func (host *vmContext) BlockChainHook() vmcommon.BlockchainHook {
 // The first four bytes is the method selector. The rest of the input data are method arguments in chunks of 32 bytes.
 // The method selector is the kecccak256 hash of the method signature.
 func (host *vmContext) createETHCallInput() []byte {
+	fmt.Println("createETHCallInput")
 	newInput := make([]byte, 0)
 
 	if len(host.callFunction) > 0 {
@@ -636,20 +637,32 @@ func (host *vmContext) createETHCallInput() []byte {
 			return nil
 		}
 
+		fmt.Println("Function: ", host.callFunction)
+		fmt.Println("Keccak256 of function: ", hashOfFunction)
+
 		methodSelectors, err := hex.DecodeString(hashOfFunction)
+		fmt.Println("Method selector: ", methodSelectors)
+		fmt.Println("Method selector as Int: ", big.NewInt(0).SetBytes(methodSelectors).String())
+
 		if err != nil {
 			return nil
 		}
 
 		newInput = append(newInput, methodSelectors[0:4]...)
+		fmt.Println("New input with method selector: ", newInput)
 	}
 
 	for _, arg := range host.vmInput.Arguments {
-		currInput := make([]byte, arwen.HashLen)
-		copy(currInput[arwen.HashLen-len(arg.Bytes()):], arg.Bytes())
+		argumentBytes := arg.Bytes()
+		ethArgumentBytes := make([]byte, arwen.HashLen)
+		copy(ethArgumentBytes[arwen.HashLen-len(argumentBytes):], argumentBytes)
+		fmt.Println("Argument bytes: ", argumentBytes)
+		fmt.Println("Argument bytes, ETH: ", ethArgumentBytes)
 
-		newInput = append(newInput, currInput...)
+		newInput = append(newInput, ethArgumentBytes...)
+		fmt.Println("New input new argument: ", newInput)
 	}
 
+	fmt.Println("New input: ", newInput)
 	return newInput
 }

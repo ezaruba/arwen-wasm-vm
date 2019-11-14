@@ -71,7 +71,9 @@ func serializeToJSON(value interface{}) []byte {
 }
 
 func DisplayWasmerInstance(instance *wasmer.Instance) {
-	fmt.Print("Exported functions:")
+	fmt.Println()
+
+	fmt.Print("Exported functions: ")
 
 	for key := range instance.Exports {
 		fmt.Print(key, " ")
@@ -131,7 +133,7 @@ func DisplayVMOutput(output *vmcommon.VMOutput) {
 }
 
 func DisplayVisualSeparator() {
-	fmt.Printf("================================================================")
+	fmt.Println("================================================================")
 }
 
 func TraceCall(functionName string) {
