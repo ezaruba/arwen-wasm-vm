@@ -221,6 +221,8 @@ func EthereumImports(imports *wasmer.Imports) (*wasmer.Imports, error) {
 
 //export ethuseGas
 func ethuseGas(context unsafe.Pointer, useGas int64) {
+	debugging.TraceCall("ethuseGas")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -230,6 +232,8 @@ func ethuseGas(context unsafe.Pointer, useGas int64) {
 
 //export ethgetAddress
 func ethgetAddress(context unsafe.Pointer, resultOffset int32) {
+	debugging.TraceCall("ethgetAddress")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -241,6 +245,8 @@ func ethgetAddress(context unsafe.Pointer, resultOffset int32) {
 
 //export ethgetExternalBalance
 func ethgetExternalBalance(context unsafe.Pointer, addressOffset int32, resultOffset int32) {
+	debugging.TraceCall("ethgetExternalBalance")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -255,6 +261,8 @@ func ethgetExternalBalance(context unsafe.Pointer, addressOffset int32, resultOf
 
 //export ethgetBlockHash
 func ethgetBlockHash(context unsafe.Pointer, number int64, resultOffset int32) int32 {
+	debugging.TraceCall("ethgetBlockHash")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -272,6 +280,8 @@ func ethgetBlockHash(context unsafe.Pointer, number int64, resultOffset int32) i
 
 //export ethcall
 func ethcall(context unsafe.Pointer, gasLimit int64, addressOffset int32, valueOffset int32, dataOffset int32, dataLength int32) int32 {
+	debugging.TraceCall("ethcall")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -349,7 +359,6 @@ func ethstorageStore(context unsafe.Pointer, pathOffset int32, valueOffset int32
 
 //export ethstorageLoad
 func ethstorageLoad(context unsafe.Pointer, pathOffset int32, resultOffset int32) {
-
 	debugging.TraceCall("ethstorageLoad")
 
 	instCtx := wasmer.IntoInstanceContext(context)
@@ -376,6 +385,8 @@ func ethstorageLoad(context unsafe.Pointer, pathOffset int32, resultOffset int32
 
 //export ethgetCaller
 func ethgetCaller(context unsafe.Pointer, resultOffset int32) {
+	debugging.TraceCall("ethgetCaller")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -431,6 +442,8 @@ func ethcodeCopy(context unsafe.Pointer, resultOffset int32, codeOffset int32, l
 
 //export ethgetCodeSize
 func ethgetCodeSize(context unsafe.Pointer) int32 {
+	debugging.TraceCall("ethgetCodeSize")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -442,6 +455,8 @@ func ethgetCodeSize(context unsafe.Pointer) int32 {
 
 //export ethexternalCodeCopy
 func ethexternalCodeCopy(context unsafe.Pointer, addressOffset int32, resultOffset int32, codeOffset int32, length int32) {
+	debugging.TraceCall("ethexternalCodeCopy")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -459,6 +474,8 @@ func ethexternalCodeCopy(context unsafe.Pointer, addressOffset int32, resultOffs
 
 //export ethgetExternalCodeSize
 func ethgetExternalCodeSize(context unsafe.Pointer, addressOffset int32) int32 {
+	debugging.TraceCall("ethgetExternalCodeSize")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -472,6 +489,8 @@ func ethgetExternalCodeSize(context unsafe.Pointer, addressOffset int32) int32 {
 
 //export ethgetGasLeft
 func ethgetGasLeft(context unsafe.Pointer) int64 {
+	debugging.TraceCall("ethgetGasLeft")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -483,6 +502,8 @@ func ethgetGasLeft(context unsafe.Pointer) int64 {
 
 //export ethgetBlockGasLimit
 func ethgetBlockGasLimit(context unsafe.Pointer) int64 {
+	debugging.TraceCall("ethgetBlockGasLimit")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -494,6 +515,8 @@ func ethgetBlockGasLimit(context unsafe.Pointer) int64 {
 
 //export ethgetTxGasPrice
 func ethgetTxGasPrice(context unsafe.Pointer, valueOffset int32) {
+	debugging.TraceCall("ethgetTxGasPrice")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -510,6 +533,8 @@ func ethgetTxGasPrice(context unsafe.Pointer, valueOffset int32) {
 
 //export ethlogTopics
 func ethlogTopics(context unsafe.Pointer, dataOffset int32, length int32, numberOfTopics int32, topic1 int32, topic2 int32, topic3 int32, topic4 int32) {
+	debugging.TraceCall("ethlogTopics")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -535,6 +560,8 @@ func ethlogTopics(context unsafe.Pointer, dataOffset int32, length int32, number
 
 //export ethgetTxOrigin
 func ethgetTxOrigin(context unsafe.Pointer, resultOffset int32) {
+	debugging.TraceCall("ethgetTxOrigin")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -545,6 +572,8 @@ func ethgetTxOrigin(context unsafe.Pointer, resultOffset int32) {
 
 //export ethfinish
 func ethfinish(context unsafe.Pointer, resultOffset int32, length int32) {
+	debugging.TraceCall("ethfinish")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -558,6 +587,8 @@ func ethfinish(context unsafe.Pointer, resultOffset int32, length int32) {
 
 //export ethrevert
 func ethrevert(context unsafe.Pointer, dataOffset int32, length int32) {
+	debugging.TraceCall("ethrevert")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
@@ -572,6 +603,8 @@ func ethrevert(context unsafe.Pointer, dataOffset int32, length int32) {
 
 //export ethselfDestruct
 func ethselfDestruct(context unsafe.Pointer, addressOffset int32) {
+	debugging.TraceCall("ethselfDestruct")
+
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 

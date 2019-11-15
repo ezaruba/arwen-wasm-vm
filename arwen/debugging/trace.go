@@ -137,19 +137,19 @@ func DisplayVisualSeparator() {
 }
 
 func TraceCall(functionName string) {
-	fmt.Printf("%s()\n", functionName)
+	fmt.Printf("> %s()\n", functionName)
 }
 
 func TraceReturnInt32(returned int32) {
-	fmt.Printf("\tReturn: %d\n", returned)
+	fmt.Printf("> Return: %d\n", returned)
 }
 
 func TraceReturnInt64(returned int64) {
-	fmt.Printf("\tReturn: %d\n", returned)
+	fmt.Printf("> Return: %d\n", returned)
 }
 
 func TraceReturnUint64(returned uint64) {
-	fmt.Printf("\tReturn: %d\n", returned)
+	fmt.Printf("> Return: %d\n", returned)
 }
 
 func TraceVarBytes(name string, value []byte) {

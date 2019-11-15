@@ -112,7 +112,7 @@ func NewArwenVM(
 }
 
 func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInput) (*vmcommon.VMOutput, error) {
-	fmt.Println("arwen.RunSmartContractCreate")
+	fmt.Println("arwen.RunSmartContractCreate - begin")
 
 	host.initInternalValues()
 	host.vmInput = input.VMInput
@@ -179,6 +179,7 @@ func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInpu
 
 	vmOutput := host.createVMOutput(result, gasLeft)
 
+	fmt.Println("arwen.RunSmartContractCreate - end")
 	return vmOutput, err
 }
 
@@ -507,12 +508,12 @@ func (host *vmContext) GetCodeSize(addr []byte) int32 {
 func (host *vmContext) GetCodeHash(addr []byte) []byte {
 	code, err := host.blockChainHook.GetCode(addr)
 	if err != nil {
-		fmt.Printf("GetCodeSize returned with error %s \n", err.Error())
+		fmt.Printf("GetCodeHash returned with error %s \n", err.Error())
 	}
 
 	codeHash, err := host.cryptoHook.Keccak256(string(code))
 	if err != nil {
-		fmt.Printf("GetCodeSize returned with error %s \n", err.Error())
+		fmt.Printf("GetCodeHash/Keccak256 returned with error %s \n", err.Error())
 	}
 
 	return []byte(codeHash)
@@ -521,7 +522,7 @@ func (host *vmContext) GetCodeHash(addr []byte) []byte {
 func (host *vmContext) GetCode(addr []byte) []byte {
 	code, err := host.blockChainHook.GetCode(addr)
 	if err != nil {
-		fmt.Printf("GetCodeSize returned with error %s \n", err.Error())
+		fmt.Printf("GetCode returned with error %s \n", err.Error())
 	}
 
 	return code
@@ -539,7 +540,7 @@ func (host *vmContext) BlockHash(number int64) []byte {
 	block, err := host.blockChainHook.GetBlockhash(big.NewInt(number))
 
 	if err != nil {
-		fmt.Printf("GetBlockHash returned with error %s \n", err.Error())
+		fmt.Printf("BlockHash returned with error %s \n", err.Error())
 		return nil
 	}
 
@@ -662,14 +663,9 @@ func (host *vmContext) createETHCallInput() []byte {
 		argumentBytes := arg.Bytes()
 		ethArgumentBytes := make([]byte, arwen.HashLen)
 		copy(ethArgumentBytes[arwen.HashLen-len(argumentBytes):], argumentBytes)
-		fmt.Println("Argument bytes: ", argumentBytes)
-		fmt.Println("Argument bytes, ETH: ", ethArgumentBytes)
-
 		newInput = append(newInput, ethArgumentBytes...)
-		fmt.Println("New input new argument: ", newInput)
 	}
 
 	fmt.Println("New input: ", newInput)
-	debugging.TraceVarBytes("new input, bytes", newInput)
 	return newInput
 }
