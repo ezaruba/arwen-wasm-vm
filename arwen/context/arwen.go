@@ -648,7 +648,7 @@ func (host *vmContext) createETHCallInput() []byte {
 		}
 
 		fmt.Println("Function: ", host.callFunction)
-
+		fmt.Println("Function hash: ", hashOfFunction)
 		methodSelectors, err := hex.DecodeString(hashOfFunction)
 
 		if err != nil {
