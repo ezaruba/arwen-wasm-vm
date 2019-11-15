@@ -58,6 +58,14 @@ type vmContext struct {
 	opcodeCosts   [wasmer.OPCODE_COUNT]uint32
 }
 
+func (host *vmContext) GetImports() *wasmer.Imports {
+	return host.imports
+}
+
+func (host *vmContext) GetOpcodeCosts() [wasmer.OPCODE_COUNT]uint32 {
+	return host.opcodeCosts
+}
+
 func NewArwenVM(
 	blockChainHook vmcommon.BlockchainHook,
 	cryptoHook vmcommon.CryptoHook,
