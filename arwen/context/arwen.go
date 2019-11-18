@@ -49,6 +49,7 @@ type vmContext struct {
 	outputAccounts map[string]*vmcommon.OutputAccount
 	returnData     []*big.Int
 	returnCode     vmcommon.ReturnCode
+	returnMessage  string
 
 	selfDestruct  map[string][]byte
 	ethInput      []byte
@@ -56,14 +57,6 @@ type vmContext struct {
 
 	gasCostConfig *config.GasCost
 	opcodeCosts   [wasmer.OPCODE_COUNT]uint32
-}
-
-func (host *vmContext) GetImports() *wasmer.Imports {
-	return host.imports
-}
-
-func (host *vmContext) GetOpcodeCosts() [wasmer.OPCODE_COUNT]uint32 {
-	return host.opcodeCosts
 }
 
 func NewArwenVM(
@@ -149,7 +142,7 @@ func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInpu
 
 	if err != nil {
 		fmt.Println("arwen Error: ", err.Error())
-		return host.createVMOutputInCaseOfError(vmcommon.ContractInvalid), nil
+		return host.createVMOutputInCaseOfError(vmcommon.ContractInvalid, ""), nil
 	}
 
 	defer host.instance.Clean()
@@ -163,7 +156,7 @@ func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInpu
 		out, err := init()
 		if err != nil {
 			fmt.Println("arwen Error", err.Error())
-			return host.createVMOutputInCaseOfError(vmcommon.FunctionWrongSignature), nil
+			return host.createVMOutputInCaseOfError(vmcommon.FunctionWrongSignature, ""), nil
 		}
 		convertedResult := arwen.ConvertReturnValue(out)
 		result = convertedResult.Bytes()
@@ -206,7 +199,7 @@ func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (
 
 	if err != nil {
 		fmt.Println("arwen Error", err.Error())
-		return host.createVMOutputInCaseOfError(vmcommon.ContractInvalid), nil
+		return host.createVMOutputInCaseOfError(vmcommon.ContractInvalid, ""), nil
 	}
 
 	defer host.instance.Clean()
@@ -216,24 +209,24 @@ func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (
 
 	if host.callFunction == "init" {
 		fmt.Println("arwen Error", ErrInitFuncCalledInRun.Error())
-		return host.createVMOutputInCaseOfError(vmcommon.UserError), nil
+		return host.createVMOutputInCaseOfError(vmcommon.UserError, ""), nil
 	}
 
 	function, ok := host.instance.Exports[host.callFunction]
 	if !ok {
 		fmt.Println("arwen Error", "Function not found")
-		return host.createVMOutputInCaseOfError(vmcommon.FunctionNotFound), nil
+		return host.createVMOutputInCaseOfError(vmcommon.FunctionNotFound, ""), nil
 	}
 
 	result, err := function()
 	if err != nil {
 		fmt.Println("arwen Error", err.Error())
-		return host.createVMOutputInCaseOfError(vmcommon.FunctionWrongSignature), nil
+		return host.createVMOutputInCaseOfError(vmcommon.FunctionWrongSignature, ""), nil
 	}
 
 	if host.returnCode != vmcommon.Ok {
 		// user error: signalError()
-		return host.createVMOutputInCaseOfError(host.returnCode), nil
+		return host.createVMOutputInCaseOfError(host.returnCode, ""), nil
 	}
 
 	convertedResult := arwen.ConvertReturnValue(result)
@@ -243,9 +236,10 @@ func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (
 	return vmOutput, nil
 }
 
-func (host *vmContext) createVMOutputInCaseOfError(errCode vmcommon.ReturnCode) *vmcommon.VMOutput {
+func (host *vmContext) createVMOutputInCaseOfError(errCode vmcommon.ReturnCode, errMessage string) *vmcommon.VMOutput {
 	vmOutput := &vmcommon.VMOutput{GasRemaining: big.NewInt(0), GasRefund: big.NewInt(0)}
 	vmOutput.ReturnCode = errCode
+	vmOutput.ReturnMessage = errMessage
 	return vmOutput
 }
 
