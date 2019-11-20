@@ -88,6 +88,11 @@ func DisplayVMCallInput(input *vmcommon.ContractCallInput) {
 	fmt.Println("\tCaller: ", hex.EncodeToString(input.CallerAddr))
 	fmt.Println("\tCallValue: ", input.CallValue.String())
 	fmt.Println("\tNumber of arguments: ", len(input.Arguments))
+
+	for i, value := range input.Arguments {
+		fmt.Printf("Arg %d: %s\n", i, value.String())
+		fmt.Printf("Arg hex %d: %s\n", i, hex.EncodeToString(value.Bytes()))
+	}
 }
 
 func DisplayVMOutput(output *vmcommon.VMOutput) {

@@ -132,6 +132,8 @@ func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInpu
 	}
 
 	host.scAddress = address
+	fmt.Println("SC address in arwen")
+	fmt.Println(hex.EncodeToString(host.scAddress))
 	host.addTxValueToSmartContract(input.CallValue, address)
 
 	host.instance, err = wasmer.NewInstanceWithImports(input.ContractCode, host.imports)
@@ -667,5 +669,6 @@ func (host *vmContext) createETHCallInput() []byte {
 	}
 
 	fmt.Println("New input: ", newInput)
+	fmt.Println("New input hex: ", hex.EncodeToString(newInput))
 	return newInput
 }
