@@ -276,7 +276,7 @@ func (host *vmContext) getFunctionToCall() (func(...interface{}) (wasmer.Value, 
 	}
 
 	if !ok {
-		return nil, ErrFunctionNonFound
+		return nil, ErrFuncNotFound
 	}
 
 	return function, nil

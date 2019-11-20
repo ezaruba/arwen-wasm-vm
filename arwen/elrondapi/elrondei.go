@@ -388,8 +388,8 @@ func getArgument(context unsafe.Pointer, id int32, argOffset int32) int32 {
 		arg = arg[1:]
 	}
 
-	debugging.TraceVarBytes("argAsBytes", arg.Bytes())
-	debugging.TraceVarBigIntBytes("argAsBigInt", arg.Bytes())
+	debugging.TraceVarBytes("argAsBytes", arg)
+	debugging.TraceVarBigIntBytes("argAsBigInt", arg)
 
 	err := arwen.StoreBytes(instCtx.Memory(), argOffset, arg)
 	if err != nil {
