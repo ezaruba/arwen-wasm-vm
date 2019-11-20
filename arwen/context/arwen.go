@@ -46,9 +46,10 @@ type vmContext struct {
 	scAddress    []byte
 
 	logs           map[string]logTopicsData
+	readOnly       bool
 	storageUpdate  map[string](map[string][]byte)
 	outputAccounts map[string]*vmcommon.OutputAccount
-	returnData     []*big.Int
+	returnData     [][]byte
 	returnCode     vmcommon.ReturnCode
 
 	selfDestruct  map[string][]byte
@@ -56,6 +57,7 @@ type vmContext struct {
 	blockGasLimit uint64
 
 	gasCostConfig *config.GasCost
+	opcodeCosts   [wasmer.OPCODE_COUNT]uint32
 }
 
 func NewArwenVM(
@@ -96,6 +98,8 @@ func NewArwenVM(
 		return nil, err
 	}
 
+	opcodeCosts := gasCostConfig.WASMOpcodeCost.ToOpcodeCostsArray()
+
 	context := &vmContext{
 		BigIntContainer: NewBigIntContainer(),
 		blockChainHook:  blockChainHook,
@@ -104,9 +108,16 @@ func NewArwenVM(
 		imports:         imports,
 		blockGasLimit:   blockGasLimit,
 		gasCostConfig:   gasCostConfig,
+		opcodeCosts:     opcodeCosts,
 	}
 
 	context.initInternalValues()
+
+	err = wasmer.SetImports(context.imports)
+	if err != nil {
+		return nil, err
+	}
+	wasmer.SetOpcodeCosts(&context.opcodeCosts)
 
 	return context, nil
 }
@@ -136,13 +147,18 @@ func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInpu
 	fmt.Println(hex.EncodeToString(host.scAddress))
 	host.addTxValueToSmartContract(input.CallValue, address)
 
-	host.instance, err = wasmer.NewInstanceWithImports(input.ContractCode, host.imports)
+	gasLeft := input.GasProvided
+	// take out contract creation gas
+	gasLeft = gasLeft - uint64(len(input.ContractCode))
+
+	host.instance, err = wasmer.NewMeteredInstance(input.ContractCode, gasLeft)
+
 	if err != nil {
 		fmt.Println("arwen Error: ", err.Error())
 		return host.createVMOutputInCaseOfError(vmcommon.ContractInvalid), nil
 	}
 
-	defer host.instance.Close()
+	defer host.instance.Clean()
 
 	idContext := arwen.AddHostContext(host)
 	host.instance.SetContextData(unsafe.Pointer(&idContext))
@@ -159,11 +175,6 @@ func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInpu
 		result = convertedResult.Bytes()
 	}
 
-	gasLeft := input.GasProvided.Int64()
-
-	// take out contract creation gas
-	gasLeft = gasLeft - int64(len(input.ContractCode))
-
 	newSCAcc, ok := host.outputAccounts[string(address)]
 	if !ok {
 		host.outputAccounts[string(address)] = &vmcommon.OutputAccount{
@@ -179,6 +190,7 @@ func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInpu
 
 	arwen.RemoveHostContext(idContext)
 
+	gasLeft = gasLeft - host.instance.GetPointsUsed()
 	vmOutput := host.createVMOutput(result, gasLeft)
 
 	fmt.Println("arwen.RunSmartContractCreate - end")
@@ -196,21 +208,24 @@ func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (
 
 	host.addTxValueToSmartContract(input.CallValue, input.RecipientAddr)
 
-	gasLeft := input.GasProvided.Int64()
+	gasLeft := input.GasProvided
 	contract := host.GetCode(host.scAddress)
 
 	var err error
-	opcode_costs := host.GasSchedule().WASMOpcodeCost.ToOpcodeCostsArray()
-	host.instance, err = wasmer.NewMeteredInstanceWithImports(contract, host.imports, uint64(gasLeft), &opcode_costs)
+	host.instance, err = wasmer.NewMeteredInstance(contract, gasLeft)
+
 	if err != nil {
 		fmt.Println("arwen Error", err.Error())
 		return host.createVMOutputInCaseOfError(vmcommon.ContractInvalid), nil
 	}
 
-	debugging.DisplayWasmerInstance(&host.instance)
-	defer host.instance.Close()
-
 	idContext := arwen.AddHostContext(host)
+
+	defer func() {
+		host.instance.Clean()
+		arwen.RemoveHostContext(idContext)
+	}()
+
 	host.instance.SetContextData(unsafe.Pointer(&idContext))
 
 	if host.callFunction == "init" {
@@ -236,7 +251,7 @@ func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (
 	}
 
 	convertedResult := arwen.ConvertReturnValue(result)
-	gasLeft = gasLeft - int64(host.instance.GetPointsUsed())
+	gasLeft = gasLeft - host.instance.GetPointsUsed()
 	vmOutput := host.createVMOutput(convertedResult.Bytes(), gasLeft)
 	debugging.TraceVMOutput(host.scAddress, vmOutput)
 	debugging.DisplayVMOutput(vmOutput)
@@ -268,7 +283,7 @@ func (host *vmContext) getFunctionToCall() (func(...interface{}) (wasmer.Value, 
 }
 
 // adapt vm output and all saved data from sc run into VM Output
-func (host *vmContext) createVMOutput(output []byte, gasLeft int64) *vmcommon.VMOutput {
+func (host *vmContext) createVMOutput(output []byte, gasLeft uint64) *vmcommon.VMOutput {
 	vmOutput := &vmcommon.VMOutput{}
 	// save storage updates
 	outAccs := make(map[string]*vmcommon.OutputAccount, 0)
@@ -329,10 +344,10 @@ func (host *vmContext) createVMOutput(output []byte, gasLeft int64) *vmcommon.VM
 		vmOutput.ReturnData = append(vmOutput.ReturnData, host.returnData...)
 	}
 	if len(output) > 0 {
-		vmOutput.ReturnData = append(vmOutput.ReturnData, big.NewInt(0).SetBytes(output))
+		vmOutput.ReturnData = append(vmOutput.ReturnData, output)
 	}
 
-	vmOutput.GasRemaining = big.NewInt(gasLeft)
+	vmOutput.GasRemaining = big.NewInt(0).SetUint64(gasLeft)
 	vmOutput.GasRefund = big.NewInt(0)
 	vmOutput.ReturnCode = host.returnCode
 
@@ -351,6 +366,7 @@ func (host *vmContext) initInternalValues() {
 	host.returnData = nil
 	host.returnCode = vmcommon.Ok
 	host.ethInput = nil
+	host.readOnly = false
 }
 
 func (host *vmContext) addTxValueToSmartContract(value *big.Int, scAddress []byte) {
@@ -391,14 +407,14 @@ func (host *vmContext) CryptoHooks() vmcommon.CryptoHook {
 }
 
 func (host *vmContext) Finish(data []byte) {
-	host.returnData = append(host.returnData, big.NewInt(0).SetBytes(data))
+	host.returnData = append(host.returnData, data)
 }
 
 func (host *vmContext) SignalUserError() {
 	host.returnCode = vmcommon.UserError
 }
 
-func (host *vmContext) Arguments() []*big.Int {
+func (host *vmContext) Arguments() [][]byte {
 	return host.vmInput.Arguments
 }
 
@@ -443,6 +459,10 @@ func (host *vmContext) SetStorage(addr []byte, key []byte, value []byte) int32 {
 	debugging.TraceVarBytes("addr", addr)
 	debugging.TraceVarBytes("key", key)
 	debugging.TraceVarBytes("value", value)
+
+	if host.readOnly {
+		return 0
+	}
 
 	strAdr := string(addr)
 
@@ -494,8 +514,33 @@ func (host *vmContext) GetBalance(addr []byte) []byte {
 		return big.NewInt(0).Bytes()
 	}
 
-	host.outputAccounts[strAdr] = &vmcommon.OutputAccount{Balance: big.NewInt(0).Set(balance), Address: addr}
+	host.outputAccounts[strAdr] = &vmcommon.OutputAccount{
+		Balance:      big.NewInt(0).Set(balance),
+		BalanceDelta: big.NewInt(0),
+		Address:      addr,
+	}
+
 	return balance.Bytes()
+}
+
+func (host *vmContext) GetNonce(addr []byte) uint64 {
+	strAdr := string(addr)
+	if _, ok := host.outputAccounts[strAdr]; ok {
+		return host.outputAccounts[strAdr].Nonce
+	}
+
+	nonce, err := host.blockChainHook.GetNonce(addr)
+	if err != nil {
+		fmt.Printf("GetNonce returned with error %s \n", err.Error())
+	}
+
+	host.outputAccounts[strAdr] = &vmcommon.OutputAccount{BalanceDelta: big.NewInt(0), Address: addr, Nonce: nonce}
+	return nonce
+}
+
+func (host *vmContext) increaseNonce(addr []byte) {
+	nonce := host.GetNonce(addr)
+	host.outputAccounts[string(addr)].Nonce = nonce + 1
 }
 
 func (host *vmContext) GetCodeSize(addr []byte) int32 {
@@ -531,6 +576,10 @@ func (host *vmContext) GetCode(addr []byte) []byte {
 }
 
 func (host *vmContext) SelfDestruct(addr []byte, beneficiary []byte) {
+	if host.readOnly {
+		return
+	}
+
 	host.selfDestruct[string(addr)] = beneficiary
 }
 
@@ -550,6 +599,10 @@ func (host *vmContext) BlockHash(number int64) []byte {
 }
 
 func (host *vmContext) WriteLog(addr []byte, topics [][]byte, data []byte) {
+	if host.readOnly {
+		return
+	}
+
 	strAdr := string(addr)
 
 	if _, ok := host.logs[strAdr]; !ok {
@@ -571,13 +624,7 @@ func (host *vmContext) WriteLog(addr []byte, topics [][]byte, data []byte) {
 // Transfer handles any necessary value transfer required and takes
 // the necessary steps to create accounts and reverses the state in case of an
 // execution error or failed value transfer.
-func (host *vmContext) Transfer(destination []byte, sender []byte, value *big.Int, input []byte, gas int64,
-) (gasLeft int64, err error) {
-	//TODO: should this be kept, or there are other use cases where a sender can be somebody else
-	if !bytes.Equal(sender, host.GetSCAddress()) {
-		return 0, ErrInvalidTransfer
-	}
-
+func (host *vmContext) Transfer(destination []byte, sender []byte, value *big.Int, input []byte) {
 	senderAcc, ok := host.outputAccounts[string(sender)]
 	if !ok {
 		senderAcc = &vmcommon.OutputAccount{
@@ -598,13 +645,6 @@ func (host *vmContext) Transfer(destination []byte, sender []byte, value *big.In
 
 	senderAcc.BalanceDelta = big.NewInt(0).Sub(senderAcc.BalanceDelta, value)
 	destAcc.BalanceDelta = big.NewInt(0).Add(destAcc.BalanceDelta, value)
-
-	//TODO: support this - smart contract which call other smart contracts - not supported yet
-	// if destination.HasCode ...
-
-	gasLeft = gas - 1
-
-	return gasLeft, err
 }
 
 func (host *vmContext) CallData() []byte {
@@ -637,6 +677,210 @@ func (host *vmContext) BlockChainHook() vmcommon.BlockchainHook {
 	return host.blockChainHook
 }
 
+func (host *vmContext) SetReadOnly(readOnly bool) {
+	host.readOnly = readOnly
+}
+
+func (host *vmContext) CreateNewContract(input *vmcommon.ContractCreateInput) ([]byte, error) {
+	if host.readOnly {
+		return nil, ErrInvalidCallOnReadOnlyMode
+	}
+
+	currVmInput := host.vmInput
+	currScAddress := host.scAddress
+	currCallFunction := host.callFunction
+
+	defer func() {
+		host.vmInput = currVmInput
+		host.scAddress = currScAddress
+		host.callFunction = currCallFunction
+	}()
+
+	host.vmInput = input.VMInput
+
+	nonce := host.GetNonce(input.CallerAddr)
+
+	address, err := host.blockChainHook.NewAddress(input.CallerAddr, nonce, host.vmType)
+	if err != nil {
+		return nil, err
+	}
+
+	host.Transfer(address, input.CallerAddr, input.CallValue, nil)
+	host.increaseNonce(input.CallerAddr)
+	host.scAddress = address
+
+	gasLeft := input.GasProvided
+	gasLeft = gasLeft - uint64(len(input.ContractCode))
+
+	newInstance, err := wasmer.NewMeteredInstance(input.ContractCode, gasLeft)
+	if err != nil {
+		fmt.Println("arwen Error: ", err.Error())
+		return nil, err
+	}
+
+	idContext := arwen.AddHostContext(host)
+	oldInstance := host.instance
+	host.instance = newInstance
+	defer func() {
+		host.instance = oldInstance
+		newInstance.Clean()
+		arwen.RemoveHostContext(idContext)
+	}()
+
+	host.instance.SetContextData(unsafe.Pointer(&idContext))
+
+	var result []byte
+	init := host.instance.Exports["init"]
+	if init != nil {
+		out, err := init()
+		if err != nil {
+			fmt.Println("arwen Error", err.Error())
+			return nil, err
+		}
+		convertedResult := arwen.ConvertReturnValue(out)
+		result = convertedResult.Bytes()
+		host.Finish(result)
+	}
+
+	newSCAcc, ok := host.outputAccounts[string(address)]
+	if !ok {
+		host.outputAccounts[string(address)] = &vmcommon.OutputAccount{
+			Address:        address,
+			Nonce:          0,
+			BalanceDelta:   big.NewInt(0),
+			StorageUpdates: nil,
+			Code:           input.ContractCode,
+		}
+	} else {
+		newSCAcc.Code = input.ContractCode
+	}
+
+	gasLeft = gasLeft - host.instance.GetPointsUsed()
+
+	return address, nil
+}
+
+func (host *vmContext) execute(input *vmcommon.ContractCallInput) error {
+	gasLeft := input.GasProvided
+	contract := host.GetCode(host.scAddress)
+
+	newInstance, err := wasmer.NewMeteredInstance(contract, gasLeft)
+	if err != nil {
+		host.UseGas(input.GasProvided)
+		return err
+	}
+
+	idContext := arwen.AddHostContext(host)
+	oldInstance := host.instance
+	host.instance = newInstance
+	defer func() {
+		host.instance = oldInstance
+		if err != nil {
+			host.UseGas(input.GasProvided)
+		} else {
+			host.UseGas(newInstance.GetPointsUsed())
+		}
+
+		newInstance.Clean()
+		arwen.RemoveHostContext(idContext)
+	}()
+
+	newInstance.SetContextData(unsafe.Pointer(&idContext))
+
+	if host.callFunction == "init" {
+		return ErrInitFuncCalledInRun
+	}
+
+	function, ok := newInstance.Exports[host.callFunction]
+	if !ok {
+		return ErrFuncNotFound
+	}
+
+	result, err := function()
+	if err != nil {
+		return ErrFunctionRunError
+	}
+
+	if host.returnCode != vmcommon.Ok {
+		return ErrReturnCodeNotOk
+	}
+
+	convertedResult := arwen.ConvertReturnValue(result)
+	host.Finish(convertedResult.Bytes())
+
+	return nil
+}
+
+func (host *vmContext) ExecuteOnSameContext(input *vmcommon.ContractCallInput) error {
+	currVmInput := host.vmInput
+	currScAddress := host.scAddress
+	currCallFunction := host.callFunction
+
+	host.vmInput = input.VMInput
+	host.scAddress = input.RecipientAddr
+	host.callFunction = input.Function
+
+	err := host.execute(input)
+
+	host.vmInput = currVmInput
+	host.scAddress = currScAddress
+	host.callFunction = currCallFunction
+
+	return err
+}
+
+func (host *vmContext) copyToNewContext() *vmContext {
+	newContext := vmContext{
+		BigIntContainer: host.BigIntContainer,
+		logs:            host.logs,
+		readOnly:        host.readOnly,
+		storageUpdate:   host.storageUpdate,
+		outputAccounts:  host.outputAccounts,
+		returnData:      host.returnData,
+		returnCode:      host.returnCode,
+		selfDestruct:    host.selfDestruct,
+	}
+
+	return &newContext
+}
+
+func (host *vmContext) copyFromContext(currContext *vmContext) {
+	host.BigIntContainer = currContext.BigIntContainer
+	host.logs = currContext.logs
+	host.readOnly = currContext.readOnly
+	host.storageUpdate = currContext.storageUpdate
+	host.outputAccounts = currContext.outputAccounts
+	host.returnData = currContext.returnData
+	host.returnCode = currContext.returnCode
+	host.selfDestruct = currContext.selfDestruct
+}
+
+func (host *vmContext) ExecuteOnDestContext(input *vmcommon.ContractCallInput) error {
+	currVmInput := host.vmInput
+	currScAddress := host.scAddress
+	currCallFunction := host.callFunction
+
+	currContext := host.copyToNewContext()
+
+	host.vmInput = input.VMInput
+	host.scAddress = input.RecipientAddr
+	host.callFunction = input.Function
+
+	host.initInternalValues()
+	err := host.execute(input)
+
+	host.copyFromContext(currContext)
+	host.vmInput = currVmInput
+	host.scAddress = currScAddress
+	host.callFunction = currCallFunction
+
+	return err
+}
+
+func (host *vmContext) ReturnData() [][]byte {
+	return host.returnData
+}
+
 // The first four bytes is the method selector. The rest of the input data are method arguments in chunks of 32 bytes.
 // The method selector is the kecccak256 hash of the method signature.
 func (host *vmContext) createETHCallInput() []byte {
@@ -662,10 +906,7 @@ func (host *vmContext) createETHCallInput() []byte {
 	}
 
 	for _, arg := range host.vmInput.Arguments {
-		argumentBytes := arg.Bytes()
-		ethArgumentBytes := make([]byte, arwen.HashLen)
-		copy(ethArgumentBytes[arwen.HashLen-len(argumentBytes):], argumentBytes)
-		newInput = append(newInput, ethArgumentBytes...)
+		newInput = append(newInput, arg...)
 	}
 
 	fmt.Println("New input: ", newInput)
