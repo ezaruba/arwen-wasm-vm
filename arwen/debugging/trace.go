@@ -123,7 +123,8 @@ func DisplayVMOutput(output *vmcommon.VMOutput) {
 		}
 
 		for _, storageUpdate := range outputAccount.StorageUpdates {
-			fmt.Println("\t\tStorage update key: "+hex.EncodeToString(storageUpdate.Offset)+" value: ", storageUpdate.Data)
+			valueFormatted := fmt.Sprintf("%s / %s", storageUpdate.Data, big.NewInt(0).SetBytes(storageUpdate.Data))
+			fmt.Println("\t\tStorage update key: "+hex.EncodeToString(storageUpdate.Offset)+" value: ", valueFormatted)
 		}
 	}
 
