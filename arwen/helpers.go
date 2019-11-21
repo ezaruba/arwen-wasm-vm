@@ -9,6 +9,7 @@ import (
 	"github.com/ElrondNetwork/go-ext-wasm/wasmer"
 )
 
+const EthAddressLen = 20
 const AddressLen = 32
 const HashLen = 32
 const BalanceLen = 32
