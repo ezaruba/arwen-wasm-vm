@@ -463,6 +463,7 @@ func (host *vmContext) SetStorage(addr []byte, key []byte, value []byte) int32 {
 	debugging.TraceVarBytes("addr", addr)
 	debugging.TraceVarBytes("key", key)
 	debugging.TraceVarBytes("value", value)
+	debugging.TraceVarBigIntBytes("value (int)", value)
 
 	if host.readOnly {
 		return 0

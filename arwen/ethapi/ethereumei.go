@@ -474,6 +474,7 @@ func ethgetGasLeft(context unsafe.Pointer) int64 {
 	gasToUse := ethContext.GasSchedule().EthAPICost.GetGasLeft
 	ethContext.UseGas(gasToUse)
 
+	debugging.TraceReturnUint64(ethContext.GasLeft())
 	return int64(ethContext.GasLeft())
 }
 
