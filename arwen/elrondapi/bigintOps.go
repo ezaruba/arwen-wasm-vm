@@ -20,7 +20,8 @@ package elrondapi
 // extern void bigIntFinish(void* context, int32_t reference);
 // extern int32_t bigIntStorageStore(void *context, int32_t keyOffset, int32_t source);
 // extern int32_t bigIntStorageLoad(void *context, int32_t keyOffset, int32_t destination);
-// extern void bigIntGetArgument(void *context, int32_t id, int32_t destination);
+// extern void bigIntGetUnsignedArgument(void *context, int32_t id, int32_t destination);
+// extern void bigIntGetSignedArgument(void *context, int32_t id, int32_t destination);
 // extern void bigIntGetCallValue(void *context, int32_t destination);
 // extern void bigIntGetExternalBalance(void *context, int32_t addressOffset, int32_t result);
 import "C"
@@ -106,7 +107,12 @@ func BigIntImports(imports *wasmer.Imports) (*wasmer.Imports, error) {
 		return nil, err
 	}
 
-	imports, err = imports.Append("bigIntGetArgument", bigIntGetArgument, C.bigIntGetArgument)
+	imports, err = imports.Append("bigIntGetUnsignedArgument", bigIntGetUnsignedArgument, C.bigIntGetUnsignedArgument)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("bigIntGetSignedArgument", bigIntGetSignedArgument, C.bigIntGetSignedArgument)
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +130,26 @@ func BigIntImports(imports *wasmer.Imports) (*wasmer.Imports, error) {
 	return imports, nil
 }
 
-//export bigIntGetArgument
-func bigIntGetArgument(context unsafe.Pointer, id int32, destination int32) {
+//export bigIntGetUnsignedArgument
+func bigIntGetUnsignedArgument(context unsafe.Pointer, id int32, destination int32) {
+	instCtx := wasmer.IntoInstanceContext(context)
+	hostContext := arwen.GetBigIntContext(instCtx.Data())
+
+	gasToUse := hostContext.GasSchedule().BigIntAPICost.BigIntGetArgument
+	hostContext.UseGas(gasToUse)
+
+	args := hostContext.Arguments()
+	if int32(len(args)) <= id {
+		return
+	}
+
+	value := hostContext.GetOne(destination)
+
+	value.SetBytes(args[id])
+}
+
+//export bigIntGetSignedArgument
+func bigIntGetSignedArgument(context unsafe.Pointer, id int32, destination int32) {
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetBigIntContext(instCtx.Data())
 
@@ -152,7 +176,6 @@ func bigIntStorageStore(context unsafe.Pointer, keyOffset int32, source int32) i
 	bytes := value.Bytes()
 
 	gasToUse := hostContext.GasSchedule().BigIntAPICost.BigIntStorageStore
-	gasToUse += hostContext.GasSchedule().BaseOperationCost.StorePerByte * uint64(len(bytes))
 	hostContext.UseGas(gasToUse)
 
 	return hostContext.SetStorage(hostContext.GetSCAddress(), key, bytes)
@@ -354,6 +377,6 @@ func bigIntFinish(context unsafe.Pointer, reference int32) {
 	hostContext.Finish(value.Bytes())
 
 	gasToUse := hostContext.GasSchedule().BigIntAPICost.BigIntFinish
-	gasToUse += hostContext.GasSchedule().BaseOperationCost.DataCopyPerByte * uint64(len(value.Bytes()))
+	gasToUse += hostContext.GasSchedule().BaseOperationCost.PersistPerByte * uint64(len(value.Bytes()))
 	hostContext.UseGas(gasToUse)
 }
