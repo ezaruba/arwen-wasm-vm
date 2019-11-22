@@ -11,6 +11,7 @@ import (
 
 const EthAddressLen = 20
 const AddressLen = 32
+const AddressLenEth = 20
 const HashLen = 32
 const BalanceLen = 32
 const InitFunctionName = "init"
