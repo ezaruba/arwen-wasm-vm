@@ -13,6 +13,8 @@ const EthAddressLen = 20
 const AddressLen = 32
 const HashLen = 32
 const BalanceLen = 32
+const InitFunctionName = "init"
+const InitFunctionNameEth = "solidity.ctor"
 
 var (
 	vmContextCounter uint8
