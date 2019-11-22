@@ -9,8 +9,13 @@ import (
 	"github.com/ElrondNetwork/go-ext-wasm/wasmer"
 )
 
+// The mapping between system contracts and their addresses is defined here:
+// https://ewasm.readthedocs.io/en/mkdocs/system_contracts/
 var contractsMap = map[string]func(unsafe.Pointer, []byte) ([]byte, error){
-	"0000000000000000000000000000000000000002": sha2_256,
+	"0000000000000000000000000000000000000001": ecrecover,
+	"0000000000000000000000000000000000000002": sha2,
+	"0000000000000000000000000000000000000003": ripemd160,
+	"0000000000000000000000000000000000000004": identity,
 	"0000000000000000000000000000000000000009": keccak256,
 }
 
@@ -27,20 +32,28 @@ func CallPredefinedContract(ctx unsafe.Pointer, address []byte, data []byte) err
 	contractKey := hex.EncodeToString(address)
 	contract, ok := contractsMap[contractKey]
 	if !ok {
-		return fmt.Errorf("invalid EEI system contract call: %s", contractKey)
+		return fmt.Errorf("invalid EEI system contract call - missing: %s", contractKey)
 	}
 
 	returnData, err := contract(ctx, data)
-	ethCtx.PutReturnData(returnData)
+	if err != nil {
+		return fmt.Errorf("erroneous EEI system contract call: %s", err.Error())
+	}
 
-	return err
+	ethCtx.ClearReturnData()
+	ethCtx.Finish(returnData)
+	return nil
 }
 
-func sha2_256(context unsafe.Pointer, data []byte) ([]byte, error) {
-	instCtx := wasmer.IntoInstanceContext(context)
-	cryptoContext := arwen.GetCryptoContext(instCtx.Data())
+func ecrecover(context unsafe.Pointer, data []byte) ([]byte, error) {
+	return nil, fmt.Errorf("EEI system contract not implemented: ecrecover")
+}
 
-	resultString, err := cryptoContext.CryptoHooks().Sha256(string(data))
+func sha2(context unsafe.Pointer, data []byte) ([]byte, error) {
+	instCtx := wasmer.IntoInstanceContext(context)
+	cryptoCtx := arwen.GetCryptoContext(instCtx.Data())
+
+	resultString, err := cryptoCtx.CryptoHooks().Sha256(string(data))
 	if err != nil {
 		return nil, err
 	}
@@ -49,11 +62,19 @@ func sha2_256(context unsafe.Pointer, data []byte) ([]byte, error) {
 	return result, nil
 }
 
+func ripemd160(context unsafe.Pointer, data []byte) ([]byte, error) {
+	return nil, fmt.Errorf("EEI system contract not implemented: ripemd160")
+}
+
+func identity(context unsafe.Pointer, data []byte) ([]byte, error) {
+	return nil, fmt.Errorf("EEI system contract not implemented: identity")
+}
+
 func keccak256(context unsafe.Pointer, data []byte) ([]byte, error) {
 	instCtx := wasmer.IntoInstanceContext(context)
-	cryptoContext := arwen.GetCryptoContext(instCtx.Data())
+	cryptoCtx := arwen.GetCryptoContext(instCtx.Data())
 
-	resultString, err := cryptoContext.CryptoHooks().Keccak256(string(data))
+	resultString, err := cryptoCtx.CryptoHooks().Keccak256(string(data))
 	if err != nil {
 		return nil, err
 	}
