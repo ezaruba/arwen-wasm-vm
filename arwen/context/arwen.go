@@ -487,6 +487,9 @@ func (host *vmContext) GetStorage(addr []byte, key []byte) []byte {
 		fmt.Printf("GetStorage returned with error: %s \n", err.Error())
 	}
 
+	debugging.TraceVarBytes("data", hash)
+	debugging.TraceVarBigIntBytes("data (int)", hash)
+
 	return hash
 }
 

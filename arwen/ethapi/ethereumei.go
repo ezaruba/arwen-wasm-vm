@@ -324,8 +324,6 @@ func ethstorageStore(context unsafe.Pointer, pathOffset int32, valueOffset int32
 
 	key := arwen.LoadBytes(instCtx.Memory(), pathOffset, arwen.HashLen)
 	data := arwen.LoadBytes(instCtx.Memory(), valueOffset, arwen.HashLen)
-	debugging.TraceVarBytes("key", key)
-	debugging.TraceVarBytes("data", data)
 
 	_ = ethContext.SetStorage(ethContext.GetSCAddress(), key, data)
 
@@ -341,13 +339,8 @@ func ethstorageLoad(context unsafe.Pointer, pathOffset int32, resultOffset int32
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
-	debugging.TraceVarInt32("pathOffset", pathOffset)
-	debugging.TraceVarInt32("resultOffset", resultOffset)
-
 	key := arwen.LoadBytes(instCtx.Memory(), pathOffset, arwen.HashLen)
 	data := ethContext.GetStorage(ethContext.GetSCAddress(), key)
-	debugging.TraceVarBytes("key", key)
-	debugging.TraceVarBytes("data", data)
 
 	currInput := make([]byte, arwen.HashLen)
 	copy(currInput[arwen.HashLen-len(data):], data)
@@ -821,6 +814,9 @@ func ethcallStatic(context unsafe.Pointer, gasLimit int64, addressOffset int32, 
 
 	address := arwen.LoadBytes(instCtx.Memory(), addressOffset, arwen.EthAddressLen)
 	data := arwen.LoadBytes(instCtx.Memory(), dataOffset, dataLength)
+	debugging.TraceVarBytes("address", address)
+	debugging.TraceVarBytes("data", data)
+	debugging.TraceVarInt32("dataLength", dataLength)
 
 	value := ethContext.GetVMInput().CallValue
 	sender := ethContext.GetVMInput().CallerAddr
