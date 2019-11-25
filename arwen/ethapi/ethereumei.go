@@ -362,7 +362,7 @@ func ethgetCaller(context unsafe.Pointer, resultOffset int32) {
 
 	caller := convertToEthAddress(ethContext.GetVMInput().CallerAddr)
 	_ = arwen.StoreBytes(instCtx.Memory(), resultOffset, caller)
-	
+
 	gasToUse := ethContext.GasSchedule().EthAPICost.GetCaller
 	ethContext.UseGas(gasToUse)
 }
@@ -374,7 +374,7 @@ func ethgetCallValue(context unsafe.Pointer, resultOffset int32) {
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
-	value := converToEthU128(ethContext.GetVMInput().CallValue.Bytes())
+	value := convertToEthU128(ethContext.GetVMInput().CallValue.Bytes())
 
 	length := len(value)
 	invBytes := make([]byte, length)
@@ -806,8 +806,9 @@ func ethcallStatic(context unsafe.Pointer, gasLimit int64, addressOffset int32, 
 	instCtx := wasmer.IntoInstanceContext(context)
 	ethContext := arwen.GetEthContext(instCtx.Data())
 
-	address := arwen.LoadBytes(instCtx.Memory(), addressOffset, arwen.EthAddressLen)
+	address := arwen.LoadBytes(instCtx.Memory(), addressOffset, arwen.AddressLenEth)
 	data := arwen.LoadBytes(instCtx.Memory(), dataOffset, dataLength)
+
 	debugging.TraceVarBytes("address", address)
 	debugging.TraceVarBytes("data", data)
 	debugging.TraceVarInt32("dataLength", dataLength)
@@ -824,7 +825,7 @@ func ethcallStatic(context unsafe.Pointer, gasLimit int64, addressOffset int32, 
 		if err != nil {
 			return 1
 		}
-	
+
 		return 0
 	}
 
@@ -888,13 +889,13 @@ func ethcreate(context unsafe.Pointer, valueOffset int32, dataOffset int32, leng
 
 // https://ewasm.readthedocs.io/en/mkdocs/eth_interface/#data-types
 func convertToEthAddress(address []byte) []byte {
-	ethAddress := address[arwen.AddressLen-arwen.AddressLenEth:arwen.AddressLen]
+	ethAddress := address[arwen.AddressLen-arwen.AddressLenEth : arwen.AddressLen]
 	return ethAddress
 }
 
-// converToEthU128 adds zero-left-padding up to a total of 16 bytes
+// convertToEthU128 adds zero-left-padding up to a total of 16 bytes
 // If the input data is larger than 16 bytes, an array of 16 zeros is returned
-func converToEthU128(data []byte) []byte {
+func convertToEthU128(data []byte) []byte {
 	const noBytes = 16
 
 	result := make([]byte, noBytes)

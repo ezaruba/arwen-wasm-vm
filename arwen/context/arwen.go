@@ -1035,7 +1035,9 @@ func (host *vmContext) createETHCallInput() []byte {
 	}
 
 	for _, arg := range host.vmInput.Arguments {
-		newInput = append(newInput, arg...)
+		paddedArg := make([]byte, arwen.HashLen)
+		copy(paddedArg[arwen.HashLen-len(arg):], arg)
+		newInput = append(newInput, paddedArg...)
 	}
 
 	fmt.Println("New input: ", newInput)
