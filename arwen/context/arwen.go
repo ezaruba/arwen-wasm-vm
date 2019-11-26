@@ -66,7 +66,7 @@ func NewArwenVM(
 	cryptoHook vmcommon.CryptoHook,
 	vmType []byte,
 	blockGasLimit uint64,
-	gasSchedule map[string]uint64,
+	gasSchedule map[string]map[string]uint64,
 ) (*vmContext, error) {
 
 	imports, err := elrondapi.ElrondEImports()
@@ -323,9 +323,7 @@ func (host *vmContext) createVMOutputInCaseOfError(errCode vmcommon.ReturnCode) 
 
 func (host *vmContext) getFunctionToCall() (func(...interface{}) (wasmer.Value, error), error) {
 	exports := host.instance.Exports
-
 	function, ok := exports[host.callFunction]
-
 	if !ok {
 		function, ok = exports["main"]
 	}
@@ -553,18 +551,9 @@ func (host *vmContext) SetStorage(addr []byte, key []byte, value []byte) int32 {
 		host.FreeGas(freeGas)
 		return int32(StorageDeleted)
 	}
-	if length < lengthOldValue {
-		freeGas := host.GasSchedule().BaseOperationCost.StorePerByte * uint64(lengthOldValue-length)
-		host.FreeGas(freeGas)
-		useGas := host.GasSchedule().BaseOperationCost.DataCopyPerByte * uint64(lengthOldValue)
-		host.UseGas(useGas)
-	}
-	if length > lengthOldValue {
-		useGas := host.GasSchedule().BaseOperationCost.StorePerByte * uint64(length-lengthOldValue)
-		host.UseGas(useGas)
-		useGas = host.GasSchedule().BaseOperationCost.DataCopyPerByte * uint64(lengthOldValue)
-		host.UseGas(useGas)
-	}
+
+	useGas := host.GasSchedule().BaseOperationCost.PersistPerByte * uint64(length)
+	host.UseGas(useGas)
 
 	return int32(StorageModified)
 }
@@ -1035,8 +1024,8 @@ func (host *vmContext) createETHCallInput() []byte {
 	}
 
 	for _, arg := range host.vmInput.Arguments {
-		paddedArg := make([]byte, arwen.HashLen)
-		copy(paddedArg[arwen.HashLen-len(arg):], arg)
+		paddedArg := make([]byte, arwen.ArgumentLenEth)
+		copy(paddedArg[arwen.ArgumentLenEth-len(arg):], arg)
 		newInput = append(newInput, paddedArg...)
 	}
 
