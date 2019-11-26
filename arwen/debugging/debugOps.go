@@ -76,13 +76,13 @@ func debugPrintInt32(context unsafe.Pointer, value int32) {
 //export debugPrintBytes
 func debugPrintBytes(context unsafe.Pointer, byteOffset int32, byteLength int32) {
 	instCtx := wasmer.IntoInstanceContext(context)
-	bytes := arwen.LoadBytes(instCtx.Memory(), byteOffset, byteLength)
+	bytes, _ := arwen.LoadBytes(instCtx.Memory(), byteOffset, byteLength)
 	fmt.Printf(">>> Bytes: %s\n", hex.EncodeToString(bytes))
 }
 
 //export debugPrintString
 func debugPrintString(context unsafe.Pointer, byteOffset int32, byteLength int32) {
 	instCtx := wasmer.IntoInstanceContext(context)
-	bytes := arwen.LoadBytes(instCtx.Memory(), byteOffset, byteLength)
+	bytes, _ := arwen.LoadBytes(instCtx.Memory(), byteOffset, byteLength)
 	fmt.Printf(">>> String: \"%s\"\n", string(bytes))
 }
