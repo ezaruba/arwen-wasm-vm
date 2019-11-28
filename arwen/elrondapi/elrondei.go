@@ -385,6 +385,7 @@ func transferValue(context unsafe.Pointer, destOffset int32, valueOffset int32, 
 //export getArgument
 func getArgument(context unsafe.Pointer, id int32, argOffset int32) int32 {
 	debugging.TraceCall("getArgument")
+	debugging.TraceVarInt32("id", id)
 
 	instCtx := wasmer.IntoInstanceContext(context)
 	hostContext := arwen.GetErdContext(instCtx.Data())

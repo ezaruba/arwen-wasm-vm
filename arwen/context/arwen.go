@@ -316,6 +316,7 @@ func (host *vmContext) isInitFunctionCalled() bool {
 }
 
 func (host *vmContext) createVMOutputInCaseOfError(errCode vmcommon.ReturnCode) *vmcommon.VMOutput {
+	fmt.Println("createVMOutputInCaseOfError:", errCode)
 	vmOutput := &vmcommon.VMOutput{GasRemaining: big.NewInt(0), GasRefund: big.NewInt(0)}
 	vmOutput.ReturnCode = errCode
 	return vmOutput
