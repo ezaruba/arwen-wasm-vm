@@ -316,7 +316,7 @@ func (host *vmContext) isInitFunctionCalled() bool {
 }
 
 func (host *vmContext) createVMOutputInCaseOfError(errCode vmcommon.ReturnCode) *vmcommon.VMOutput {
-	vmOutput := &vmcommon.VMOutput{GasRemaining: big.NewInt(0), GasRefund: big.NewInt(0)}
+	vmOutput := &vmcommon.VMOutput{GasRemaining: 0, GasRefund: big.NewInt(0)}
 	vmOutput.ReturnCode = errCode
 	return vmOutput
 }
@@ -370,6 +370,9 @@ func (host *vmContext) createVMOutput(output []byte) *vmcommon.VMOutput {
 		if outAcc.Nonce > 0 {
 			outAccs[addr].Nonce = outAcc.Nonce
 		}
+		if len(outAcc.Data) > 0 {
+			outAccs[addr].Data = outAcc.Data
+		}
 	}
 
 	// save to the output finally
@@ -382,14 +385,9 @@ func (host *vmContext) createVMOutput(output []byte) *vmcommon.VMOutput {
 		logEntry := &vmcommon.LogEntry{
 			Address: []byte(addr),
 			Data:    value.data,
+			Topics:  value.topics,
 		}
 
-		topics := make([]*big.Int, len(value.topics))
-		for i := 0; i < len(value.topics); i++ {
-			topics[i] = big.NewInt(0).SetBytes(value.topics[i])
-		}
-
-		logEntry.Topics = topics
 		vmOutput.Logs = append(vmOutput.Logs, logEntry)
 	}
 
@@ -400,7 +398,7 @@ func (host *vmContext) createVMOutput(output []byte) *vmcommon.VMOutput {
 		vmOutput.ReturnData = append(vmOutput.ReturnData, output)
 	}
 
-	vmOutput.GasRemaining = big.NewInt(0).SetUint64(host.GasLeft())
+	vmOutput.GasRemaining = host.GasLeft()
 	vmOutput.GasRefund = big.NewInt(0).SetUint64(host.refund)
 	vmOutput.ReturnCode = host.returnCode
 
@@ -656,7 +654,11 @@ func (host *vmContext) GetVMInput() vmcommon.VMInput {
 }
 
 func (host *vmContext) BlockHash(number int64) []byte {
-	block, err := host.blockChainHook.GetBlockhash(big.NewInt(number))
+	if number < 0 {
+		fmt.Printf("BlockHash nonce cannot be negative\n")
+		return nil
+	}
+	block, err := host.blockChainHook.GetBlockhash(uint64(number))
 
 	if err != nil {
 		fmt.Printf("BlockHash returned with error %s \n", err.Error())
@@ -713,6 +715,7 @@ func (host *vmContext) Transfer(destination []byte, sender []byte, value *big.In
 
 	senderAcc.BalanceDelta = big.NewInt(0).Sub(senderAcc.BalanceDelta, value)
 	destAcc.BalanceDelta = big.NewInt(0).Add(destAcc.BalanceDelta, value)
+	destAcc.Data = append(destAcc.Data, input...)
 }
 
 func (host *vmContext) CallData() []byte {
