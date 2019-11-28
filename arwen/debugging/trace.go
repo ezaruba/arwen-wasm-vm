@@ -119,6 +119,9 @@ func DisplayVMOutput(output *vmcommon.VMOutput) {
 		if len(outputAccount.Code) > 0 {
 			fmt.Println("\t\tCode change to : [", len(outputAccount.Code), " bytes]")
 		}
+		if len(outputAccount.Data) > 0 {
+			fmt.Println("\t\tData: [", string(outputAccount.Data), "]")
+		}
 
 		for _, storageUpdate := range outputAccount.StorageUpdates {
 			valueFormatted := fmt.Sprintf("%s / %s", storageUpdate.Data, big.NewInt(0).SetBytes(storageUpdate.Data))
