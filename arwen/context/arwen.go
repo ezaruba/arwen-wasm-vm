@@ -123,8 +123,21 @@ func NewArwenVM(
 	return context, nil
 }
 
-func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInput) (*vmcommon.VMOutput, error) {
-	fmt.Println("arwen.RunSmartContractCreate - begin")
+func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInput) (vmOutput *vmcommon.VMOutput, err error) {
+	try := func() {
+		vmOutput, err = host.doRunSmartContractCreate(input)
+	}
+
+	catch := func(caught error) {
+		err = caught
+	}
+
+	arwen.TryCatch(try, catch, "arwen.RunSmartContractCreate")
+	return
+}
+
+func (host *vmContext) doRunSmartContractCreate(input *vmcommon.ContractCreateInput) (*vmcommon.VMOutput, error) {
+	fmt.Println("arwen.doRunSmartContractCreate - begin")
 
 	host.initInternalValues()
 	host.vmInput = input.VMInput
@@ -193,7 +206,7 @@ func (host *vmContext) RunSmartContractCreate(input *vmcommon.ContractCreateInpu
 
 	vmOutput := host.createVMOutput(result)
 
-	fmt.Println("arwen.RunSmartContractCreate - end")
+	fmt.Println("arwen.doRunSmartContractCreate - end")
 	return vmOutput, err
 }
 
@@ -237,7 +250,20 @@ func (host *vmContext) callInitFunction() (bool, []byte, error) {
 	return true, result, nil
 }
 
-func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (*vmcommon.VMOutput, error) {
+func (host *vmContext) RunSmartContractCall(input *vmcommon.ContractCallInput) (vmOutput *vmcommon.VMOutput, err error) {
+	try := func() {
+		vmOutput, err = host.doRunSmartContractCall(input)
+	}
+
+	catch := func(caught error) {
+		err = caught
+	}
+
+	arwen.TryCatch(try, catch, "arwen.RunSmartContractCall")
+	return
+}
+
+func (host *vmContext) doRunSmartContractCall(input *vmcommon.ContractCallInput) (*vmcommon.VMOutput, error) {
 	debugging.DisplayVisualSeparator()
 	debugging.DisplayVMCallInput(input)
 
