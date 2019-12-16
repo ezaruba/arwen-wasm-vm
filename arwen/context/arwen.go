@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"unsafe"
 
-	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
+	arwen "github.com/ElrondNetwork/arwen-wasm-vm/arwen"
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/crypto"
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/debugging"
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/elrondapi"
@@ -451,6 +451,7 @@ func (host *vmContext) initInternalValues() {
 	host.ethInput = nil
 	host.readOnly = false
 	host.refund = 0
+	host.SetRuntimeBreakpointValue(arwen.BreakpointNone)
 }
 
 func (host *vmContext) addTxValueToSmartContract(value *big.Int, scAddress []byte) {
@@ -516,6 +517,14 @@ func (host *vmContext) AccountExists(addr []byte) bool {
 		fmt.Printf("Account exsits returned with error %s \n", err.Error())
 	}
 	return exists
+}
+
+func (host *vmContext) SetRuntimeBreakpointValue(value arwen.BreakpointValue) {
+	host.instance.SetBreakpointValue(uint64(value))
+}
+
+func (host *vmContext) GetRuntimeBreakpointValue() arwen.BreakpointValue {
+	return arwen.BreakpointValue(host.instance.GetBreakpointValue())
 }
 
 func (host *vmContext) GetStorage(addr []byte, key []byte) []byte {
@@ -646,13 +655,7 @@ func (host *vmContext) GetCodeHash(addr []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	codeHash, err := host.cryptoHook.Keccak256(string(code))
-	if err != nil {
-		return nil, err
-	}
-
-	result := []byte(codeHash)
-	return result, nil
+	return host.cryptoHook.Keccak256(code)
 }
 
 func (host *vmContext) GetCode(addr []byte) ([]byte, error) {
@@ -1032,21 +1035,14 @@ func (host *vmContext) createETHCallInput() []byte {
 	newInput := make([]byte, 0)
 
 	if len(host.callFunction) > 0 {
-		hashOfFunction, err := host.cryptoHook.Keccak256(host.callFunction)
+		hashOfFunction, err := host.cryptoHook.Keccak256([]byte(host.callFunction))
 		if err != nil {
 			return nil
 		}
 
 		fmt.Println("Function: ", host.callFunction)
 		fmt.Println("Function hash: ", hashOfFunction)
-		methodSelectors, err := hex.DecodeString(hashOfFunction)
-
-		if err != nil {
-			return nil
-		}
-
-		newInput = append(newInput, methodSelectors[0:4]...)
-		fmt.Println("New input with method selector: ", newInput)
+		newInput = append(newInput, hashOfFunction[0:4]...)
 	}
 
 	for _, arg := range host.vmInput.Arguments {
