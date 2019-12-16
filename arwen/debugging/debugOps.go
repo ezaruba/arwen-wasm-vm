@@ -11,6 +11,7 @@ package debugging
 // extern void debugPrintInt32(void* context, int32_t value);
 // extern void debugPrintBytes(void* context, int32_t byteOffset, int32_t byteLength);
 // extern void debugPrintString(void* context, int32_t byteOffset, int32_t byteLength);
+// extern void debugPrintLineNumber(void* context, int32_t value);
 import "C"
 
 import (
@@ -51,6 +52,11 @@ func DebugImports(imports *wasmer.Imports) (*wasmer.Imports, error) {
 		return nil, err
 	}
 
+	imports, err = imports.Append("debugPrintLineNumber", debugPrintLineNumber, C.debugPrintLineNumber)
+	if err != nil {
+		return nil, err
+	}
+	
 	return imports, nil
 }
 
@@ -85,4 +91,9 @@ func debugPrintString(context unsafe.Pointer, byteOffset int32, byteLength int32
 	instCtx := wasmer.IntoInstanceContext(context)
 	bytes, _ := arwen.LoadBytes(instCtx.Memory(), byteOffset, byteLength)
 	fmt.Printf(">>> String: \"%s\"\n", string(bytes))
+}
+
+//export debugPrintLineNumber
+func debugPrintLineNumber(context unsafe.Pointer, value int32) {
+	fmt.Printf(">>> Line: %d\n", value)
 }

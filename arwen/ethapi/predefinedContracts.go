@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
+	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/debugging"
 	"github.com/ElrondNetwork/go-ext-wasm/wasmer"
 )
 
@@ -42,6 +43,7 @@ func CallPredefinedContract(ctx unsafe.Pointer, address []byte, data []byte) err
 
 	ethCtx.ClearReturnData()
 	ethCtx.Finish(returnData)
+	debugging.TraceVarBytes("returnData", returnData)
 	return nil
 }
 
