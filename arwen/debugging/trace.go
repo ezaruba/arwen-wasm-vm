@@ -15,13 +15,13 @@ import (
 // Trace is useful for debugging (in IDE)
 type Trace struct {
 	mutex          sync.Mutex
-	vmOutputMap    map[string]*vmcommon.VMOutput
-	latestVMOutput *vmcommon.VMOutput
+	VMOutputMap    map[string]*vmcommon.VMOutput
+	LatestVMOutput *vmcommon.VMOutput
 }
 
 // GlobalTrace is the trace singleton
 var GlobalTrace = &Trace{
-	vmOutputMap: make(map[string]*vmcommon.VMOutput),
+	VMOutputMap: make(map[string]*vmcommon.VMOutput),
 }
 
 // PutVMOutput saves the VMOutput in the trace
@@ -30,8 +30,8 @@ func (trace *Trace) PutVMOutput(scAddress []byte, vmOutput *vmcommon.VMOutput) {
 	defer trace.mutex.Unlock()
 
 	scAddressEncoded := hex.EncodeToString(scAddress)
-	trace.vmOutputMap[scAddressEncoded] = vmOutput
-	trace.latestVMOutput = vmOutput
+	trace.VMOutputMap[scAddressEncoded] = vmOutput
+	trace.LatestVMOutput = vmOutput
 }
 
 func DisplayWasmerInstance(instance *wasmer.Instance) {
