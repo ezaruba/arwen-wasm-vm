@@ -334,7 +334,7 @@ func (host *vmContext) doRunSmartContractCall(input *vmcommon.ContractCallInput)
 	convertedResult := arwen.ConvertReturnValue(result)
 	vmOutput := host.createVMOutput(convertedResult.Bytes())
 
-	debugging.TraceVMOutput(host.scAddress, vmOutput)
+	debugging.GlobalTrace.PutVMOutput(host.scAddress, vmOutput)
 	debugging.DisplayVMOutput(vmOutput)
 	debugging.DisplayVisualSeparator()
 
