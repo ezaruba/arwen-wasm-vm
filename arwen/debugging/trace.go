@@ -20,7 +20,9 @@ type Trace struct {
 }
 
 // GlobalTrace is the trace singleton
-var GlobalTrace = &Trace{}
+var GlobalTrace = &Trace{
+	vmOutputMap: make(map[string]*vmcommon.VMOutput),
+}
 
 // PutVMOutput saves the VMOutput in the trace
 func (trace *Trace) PutVMOutput(scAddress []byte, vmOutput *vmcommon.VMOutput) {
