@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"sort"
 	"unsafe"
 
 	arwen "github.com/ElrondNetwork/arwen-wasm-vm/arwen"
@@ -171,7 +172,7 @@ func (host *vmContext) doRunSmartContractCreate(input *vmcommon.ContractCreateIn
 		return host.createVMOutputInCaseOfError(vmcommon.OutOfGas), nil
 	}
 
-	host.instance, err = wasmer.NewMeteredInstance(input.ContractCode, host.vmInput.GasProvided)
+	err = host.createMeteredWasmerInstance(input.ContractCode)
 
 	if err != nil {
 		fmt.Println("arwen Error: ", err.Error())
@@ -290,7 +291,7 @@ func (host *vmContext) doRunSmartContractCall(input *vmcommon.ContractCallInput)
 		return host.createVMOutputInCaseOfError(vmcommon.OutOfGas), nil
 	}
 
-	host.instance, err = wasmer.NewMeteredInstance(contract, host.vmInput.GasProvided)
+	err = host.createMeteredWasmerInstance(contract)
 
 	if err != nil {
 		fmt.Println("arwen Error", err.Error())
@@ -338,6 +339,13 @@ func (host *vmContext) doRunSmartContractCall(input *vmcommon.ContractCallInput)
 	debugging.DisplayVisualSeparator()
 
 	return vmOutput, nil
+}
+
+func (host *vmContext) createMeteredWasmerInstance(contract []byte) error {
+	var err error
+	host.instance, err = wasmer.NewMeteredInstance(contract, host.vmInput.GasProvided)
+	host.SetRuntimeBreakpointValue(arwen.BreakpointNone)
+	return err
 }
 
 func (host *vmContext) isInitFunctionCalled() bool {
@@ -434,7 +442,29 @@ func (host *vmContext) createVMOutput(output []byte) *vmcommon.VMOutput {
 	vmOutput.GasRefund = big.NewInt(0).SetUint64(host.refund)
 	vmOutput.ReturnCode = host.returnCode
 
+	sortVMOutputInsideData(vmOutput)
+
 	return vmOutput
+}
+
+func sortVMOutputInsideData(vmOutput *vmcommon.VMOutput) {
+	sort.Slice(vmOutput.DeletedAccounts, func(i, j int) bool {
+		return bytes.Compare(vmOutput.DeletedAccounts[i], vmOutput.DeletedAccounts[j]) < 0
+	})
+
+	sort.Slice(vmOutput.TouchedAccounts, func(i, j int) bool {
+		return bytes.Compare(vmOutput.TouchedAccounts[i], vmOutput.TouchedAccounts[j]) < 0
+	})
+
+	sort.Slice(vmOutput.OutputAccounts, func(i, j int) bool {
+		return bytes.Compare(vmOutput.OutputAccounts[i].Address, vmOutput.OutputAccounts[j].Address) < 0
+	})
+
+	for _, outAcc := range vmOutput.OutputAccounts {
+		sort.Slice(outAcc.StorageUpdates, func(i, j int) bool {
+			return bytes.Compare(outAcc.StorageUpdates[i].Offset, outAcc.StorageUpdates[j].Offset) < 0
+		})
+	}
 }
 
 func (host *vmContext) initInternalValues() {
@@ -451,7 +481,6 @@ func (host *vmContext) initInternalValues() {
 	host.ethInput = nil
 	host.readOnly = false
 	host.refund = 0
-	host.SetRuntimeBreakpointValue(arwen.BreakpointNone)
 }
 
 func (host *vmContext) addTxValueToSmartContract(value *big.Int, scAddress []byte) {
