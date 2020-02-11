@@ -21,6 +21,7 @@ import (
 	"unsafe"
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
+	"github.com/ElrondNetwork/arwen-wasm-vm/wasmer"
 )
 
 func DebugImports(imports *wasmer.Imports) (*wasmer.Imports, error) {
@@ -61,10 +62,8 @@ func DebugImports(imports *wasmer.Imports) (*wasmer.Imports, error) {
 
 //export debugPrintBigInt
 func debugPrintBigInt(context unsafe.Pointer, handle int32) {
-	instCtx := wasmer.IntoInstanceContext(context)
-	hostContext := arwen.GetBigIntContext(instCtx.Data())
-
-	output := hostContext.GetOne(handle).Bytes()
+	bigInt := arwen.GetBigIntContext(context)
+	output := bigInt.GetOne(handle).Bytes()
 	fmt.Printf(">>> BigInt: %s\n", big.NewInt(0).SetBytes(output).String())
 }
 
@@ -80,15 +79,19 @@ func debugPrintInt32(context unsafe.Pointer, value int32) {
 
 //export debugPrintBytes
 func debugPrintBytes(context unsafe.Pointer, byteOffset int32, byteLength int32) {
-	instCtx := wasmer.IntoInstanceContext(context)
-	bytes, _ := arwen.LoadBytes(instCtx.Memory(), byteOffset, byteLength)
+	host := arwen.GetVmContext(context)
+	runtime := host.Runtime()
+	
+	bytes, _ := runtime.MemLoad(byteOffset, byteLength)
 	fmt.Printf(">>> Bytes: %s\n", hex.EncodeToString(bytes))
 }
 
 //export debugPrintString
 func debugPrintString(context unsafe.Pointer, byteOffset int32, byteLength int32) {
-	instCtx := wasmer.IntoInstanceContext(context)
-	bytes, _ := arwen.LoadBytes(instCtx.Memory(), byteOffset, byteLength)
+	host := arwen.GetVmContext(context)
+	runtime := host.Runtime()
+
+	bytes, _ := runtime.MemLoad(byteOffset, byteLength)
 	fmt.Printf(">>> String: \"%s\"\n", string(bytes))
 }
 
