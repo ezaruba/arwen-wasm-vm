@@ -7,7 +7,6 @@ import (
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/debugging"
-	"github.com/ElrondNetwork/go-ext-wasm/wasmer"
 )
 
 // The mapping between system contracts and their addresses is defined here:
@@ -28,9 +27,8 @@ func IsAddressForPredefinedContract(address []byte) bool {
 }
 
 // CallPredefinedContract executes a predefined contract specified by address
-func CallPredefinedContract(ctx unsafe.Pointer, address []byte, data []byte) error {
-	instCtx := wasmer.IntoInstanceContext(ctx)
-	ethCtx := arwen.GetEthContext(instCtx.Data())
+func CallPredefinedContract(context unsafe.Pointer, address []byte, data []byte) error {
+	output := arwen.GetOutputContext(context)
 
 	contractKey := hex.EncodeToString(address)
 	contract, ok := contractsMap[contractKey]
@@ -38,14 +36,15 @@ func CallPredefinedContract(ctx unsafe.Pointer, address []byte, data []byte) err
 		return fmt.Errorf("invalid EEI system contract call - missing: %s", contractKey)
 	}
 
-	returnData, err := contract(ctx, data)
+	returnData, err := contract(context, data)
 	if err != nil {
 		return fmt.Errorf("erroneous EEI system contract call: %s", err.Error())
 	}
 
-	ethCtx.ClearReturnData()
-	ethCtx.Finish(returnData)
 	debugging.TraceVarBytes("returnData", returnData)
+	
+	output.ClearReturnData()
+	output.Finish(returnData)
 	return nil
 }
 
@@ -54,15 +53,13 @@ func ecrecover(context unsafe.Pointer, data []byte) ([]byte, error) {
 }
 
 func sha2(context unsafe.Pointer, data []byte) ([]byte, error) {
-	instCtx := wasmer.IntoInstanceContext(context)
-	cryptoCtx := arwen.GetCryptoContext(instCtx.Data())
-	return cryptoCtx.CryptoHooks().Sha256(data)
+	crypto := arwen.GetCryptoContext(context)
+	return crypto.Sha256(data)
 }
 
 func ripemd160(context unsafe.Pointer, data []byte) ([]byte, error) {
-	instCtx := wasmer.IntoInstanceContext(context)
-	cryptoCtx := arwen.GetCryptoContext(instCtx.Data())
-	return cryptoCtx.CryptoHooks().Ripemd160(data)
+	crypto := arwen.GetCryptoContext(context)
+	return crypto.Ripemd160(data)
 }
 
 func identity(context unsafe.Pointer, data []byte) ([]byte, error) {
@@ -70,7 +67,10 @@ func identity(context unsafe.Pointer, data []byte) ([]byte, error) {
 }
 
 func keccak256(context unsafe.Pointer, data []byte) ([]byte, error) {
-	instCtx := wasmer.IntoInstanceContext(context)
-	cryptoCtx := arwen.GetCryptoContext(instCtx.Data())
-	return cryptoCtx.CryptoHooks().Keccak256(data)
+	crypto := arwen.GetCryptoContext(context)
+	result, err := crypto.Keccak256(data)
+	if err != nil {
+		fmt.Printf("Error Keccak256: %s\n", err.Error())
+	}
+	return result, err
 }
