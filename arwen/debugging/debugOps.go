@@ -21,7 +21,6 @@ import (
 	"unsafe"
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
-	"github.com/ElrondNetwork/go-ext-wasm/wasmer"
 )
 
 func DebugImports(imports *wasmer.Imports) (*wasmer.Imports, error) {

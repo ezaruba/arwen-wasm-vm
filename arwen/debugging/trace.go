@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/ElrondNetwork/arwen-wasm-vm/wasmer"
 	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
-	"github.com/ElrondNetwork/go-ext-wasm/wasmer"
 )
 
 // Trace is useful for debugging (in IDE)
