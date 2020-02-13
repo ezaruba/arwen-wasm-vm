@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
+	"github.com/ElrondNetwork/arwen-wasm-vm/arwen/debugging"
 	"github.com/ElrondNetwork/arwen-wasm-vm/wasmer"
 	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
 )
@@ -122,6 +123,10 @@ func (host *vmHost) doRunSmartContractCall(input *vmcommon.ContractCallInput) (v
 	}
 
 	vmOutput = output.GetVMOutput(result)
+
+	debugging.GlobalTrace.PutVMOutput(input.RecipientAddr, vmOutput)
+	debugging.DisplayVMOutput(vmOutput)
+	debugging.DisplayVisualSeparator()
 
 	return vmOutput
 }
