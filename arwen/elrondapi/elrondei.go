@@ -9,7 +9,7 @@ package elrondapi
 // extern void getOwner(void *context, int32_t resultOffset);
 // extern void getExternalBalance(void *context, int32_t addressOffset, int32_t resultOffset);
 // extern int32_t blockHash(void *context, long long nonce, int32_t resultOffset);
-// extern int32_t transferValue(void *context, long long gas, int32_t dstOffset, int32_t valueOffset, int32_t dataOffset, int32_t length);
+// extern int32_t transferValue(void *context, int32_t dstOffset, int32_t valueOffset, int32_t dataOffset, int32_t length);
 // extern int32_t getArgumentLength(void *context, int32_t id);
 // extern int32_t getArgument(void *context, int32_t id, int32_t argOffset);
 // extern int32_t getFunction(void *context, int32_t functionOffset);
@@ -29,6 +29,7 @@ package elrondapi
 // extern int32_t delegateExecution(void *context, long long gas, int32_t addressOffset, int32_t functionOffset, int32_t functionLength, int32_t numArguments, int32_t argumentsLengthOffset, int32_t dataOffset);
 // extern int32_t executeReadOnly(void *context, long long gas, int32_t addressOffset, int32_t functionOffset, int32_t functionLength, int32_t numArguments, int32_t argumentsLengthOffset, int32_t dataOffset);
 // extern int32_t createContract(void *context, int32_t valueOffset, int32_t codeOffset, int32_t length, int32_t resultOffset, int32_t numArguments, int32_t argumentsLengthOffset, int32_t dataOffset);
+// extern void asyncCall(void *context, int32_t dstOffset, int32_t valueOffset, int32_t dataOffset, int32_t length);
 //
 // extern int32_t getNumReturnData(void *context);
 // extern int32_t getReturnDataSize(void *context, int32_t resultId);
@@ -83,6 +84,11 @@ func ElrondEImports() (*wasmer.Imports, error) {
 	}
 
 	imports, err = imports.Append("transferValue", transferValue, C.transferValue)
+	if err != nil {
+		return nil, err
+	}
+
+	imports, err = imports.Append("asyncCall", asyncCall, C.asyncCall)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +279,7 @@ func ElrondEImports() (*wasmer.Imports, error) {
 //export getGasLeft
 func getGasLeft(context unsafe.Pointer) int64 {
 	debugging.TraceCall("getGasLeft")
-	
+
 	metering := arwen.GetMeteringContext(context)
 
 	gasToUse := metering.GasSchedule().ElrondAPICost.GetGasLeft
@@ -291,7 +297,7 @@ func getOwner(context unsafe.Pointer, resultOffset int32) {
 
 	owner := runtime.GetSCAddress()
 	err := runtime.MemStore(resultOffset, owner)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return
 	}
 
@@ -307,7 +313,7 @@ func signalError(context unsafe.Pointer, messageOffset int32, messageLength int3
 	metering := arwen.GetMeteringContext(context)
 
 	message, err := runtime.MemLoad(messageOffset, messageLength)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return
 	}
 	runtime.SignalUserError(string(message))
@@ -319,13 +325,13 @@ func signalError(context unsafe.Pointer, messageOffset int32, messageLength int3
 //export getExternalBalance
 func getExternalBalance(context unsafe.Pointer, addressOffset int32, resultOffset int32) {
 	debugging.TraceCall("getExternalBalance")
-	
+
 	blockchain := arwen.GetBlockchainContext(context)
 	runtime := arwen.GetRuntimeContext(context)
 	metering := arwen.GetMeteringContext(context)
 
 	address, err := runtime.MemLoad(addressOffset, arwen.AddressLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return
 	}
 
@@ -334,7 +340,7 @@ func getExternalBalance(context unsafe.Pointer, addressOffset int32, resultOffse
 	debugging.TraceVarBigIntBytes("balance", balance)
 
 	err = runtime.MemStore(resultOffset, balance)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return
 	}
 
@@ -353,10 +359,9 @@ func blockHash(context unsafe.Pointer, nonce int64, resultOffset int32) int32 {
 	gasToUse := metering.GasSchedule().ElrondAPICost.GetBlockHash
 	metering.UseGas(gasToUse)
 
-	//TODO: change blockchain hook to treat actual nonce - not the offset.
 	hash := blockchain.BlockHash(nonce)
 	err := runtime.MemStore(resultOffset, hash)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
@@ -366,26 +371,26 @@ func blockHash(context unsafe.Pointer, nonce int64, resultOffset int32) int32 {
 }
 
 //export transferValue
-func transferValue(context unsafe.Pointer, gasLimit int64, destOffset int32, valueOffset int32, dataOffset int32, length int32) int32 {
+func transferValue(context unsafe.Pointer, destOffset int32, valueOffset int32, dataOffset int32, length int32) int32 {
 	debugging.TraceCall("transferValue")
-	
+
 	runtime := arwen.GetRuntimeContext(context)
 	metering := arwen.GetMeteringContext(context)
 	output := arwen.GetOutputContext(context)
 
 	send := runtime.GetSCAddress()
 	dest, err := runtime.MemLoad(destOffset, arwen.AddressLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
 	value, err := runtime.MemLoad(valueOffset, arwen.BalanceLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
 	data, err := runtime.MemLoad(dataOffset, length)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
@@ -394,11 +399,61 @@ func transferValue(context unsafe.Pointer, gasLimit int64, destOffset int32, val
 	metering.UseGas(gasToUse)
 
 	invBytes := arwen.InverseBytes(value)
-	invValue := big.NewInt(0).SetBytes(invBytes)
-	boundGasLimit := metering.BoundGasLimit(gasLimit)
-	output.Transfer(dest, send, boundGasLimit, invValue, data)
+	output.Transfer(dest, send, 0, big.NewInt(0).SetBytes(invBytes), data)
 
 	return 0
+}
+
+//export asyncCall
+func asyncCall(context unsafe.Pointer, destOffset int32, valueOffset int32, dataOffset int32, length int32) {
+	runtime := arwen.GetRuntimeContext(context)
+	metering := arwen.GetMeteringContext(context)
+	output := arwen.GetOutputContext(context)
+
+	callingSCAddress := runtime.GetSCAddress()
+	calledSCAddress, err := runtime.MemLoad(destOffset, arwen.AddressLen)
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
+		return
+	}
+
+	value, err := runtime.MemLoad(valueOffset, arwen.BalanceLen)
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
+		return
+	}
+
+	data, err := runtime.MemLoad(dataOffset, length)
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
+		return
+	}
+
+	gasSchedule := metering.GasSchedule()
+	gasToUse := gasSchedule.ElrondAPICost.AsyncCallStep
+	gasToUse += gasSchedule.BaseOperationCost.DataCopyPerByte * uint64(length)
+	metering.UseGas(gasToUse)
+
+	gasLimit := metering.GasLeft()
+
+	minAsyncCallCost := 2*gasSchedule.ElrondAPICost.AsyncCallStep + gasSchedule.ElrondAPICost.AsyncCallbackGasLock
+	if gasLimit < minAsyncCallCost {
+		runtime.SetRuntimeBreakpointValue(arwen.BreakpointOutOfGas)
+		return
+	}
+
+	// Set up the async call as if it is not known whether the called SC
+	// is in the same shard with the caller or not. This will be later resolved
+	// in the handler for BreakpointAsyncCall.
+	invValueBytes := arwen.InverseBytes(value)
+	output.Transfer(calledSCAddress, callingSCAddress, gasLimit, big.NewInt(0).SetBytes(invValueBytes), data)
+
+	runtime.SetAsyncCallInfo(&arwen.AsyncCallInfo{
+		Destination: calledSCAddress,
+		Data:        data,
+		GasLimit:    gasLimit,
+		ValueBytes:  invValueBytes,
+	})
+
+	// Instruct Wasmer to interrupt the execution of the caller SC.
+	runtime.SetRuntimeBreakpointValue(arwen.BreakpointAsyncCall)
 }
 
 //export getArgumentLength
@@ -438,7 +493,7 @@ func getArgument(context unsafe.Pointer, id int32, argOffset int32) int32 {
 	debugging.TraceVarBigIntBytes("argAsBigInt", args[id])
 
 	err := runtime.MemStore(argOffset, args[id])
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
 
@@ -459,7 +514,7 @@ func getFunction(context unsafe.Pointer, functionOffset int32) int32 {
 	debugging.TraceVarString("function", function)
 
 	err := runtime.MemStore(functionOffset, []byte(function))
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
 
@@ -484,23 +539,23 @@ func getNumArguments(context unsafe.Pointer) int32 {
 //export storageStore
 func storageStore(context unsafe.Pointer, keyOffset int32, dataOffset int32, dataLength int32) int32 {
 	debugging.TraceCall("storageStore")
-	
+
 	runtime := arwen.GetRuntimeContext(context)
 	storage := arwen.GetStorageContext(context)
 	metering := arwen.GetMeteringContext(context)
 
 	key, err := runtime.MemLoad(keyOffset, arwen.HashLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
 
 	debugging.TraceVarBytes("key", key)
 
 	data, err := runtime.MemLoad(dataOffset, dataLength)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
-	
+
 	debugging.TraceVarBytes("data", data)
 
 	gasToUse := metering.GasSchedule().ElrondAPICost.StorageStore
@@ -518,7 +573,7 @@ func storageGetValueLength(context unsafe.Pointer, keyOffset int32) int32 {
 	metering := arwen.GetMeteringContext(context)
 
 	key, err := runtime.MemLoad(keyOffset, arwen.HashLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
 
@@ -539,7 +594,7 @@ func storageLoad(context unsafe.Pointer, keyOffset int32, dataOffset int32) int3
 	metering := arwen.GetMeteringContext(context)
 
 	key, err := runtime.MemLoad(keyOffset, arwen.HashLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
 
@@ -552,7 +607,7 @@ func storageLoad(context unsafe.Pointer, keyOffset int32, dataOffset int32) int3
 	metering.UseGas(gasToUse)
 
 	err = runtime.MemStore(dataOffset, data)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
 
@@ -571,7 +626,7 @@ func getCaller(context unsafe.Pointer, resultOffset int32) {
 	caller := runtime.GetVMInput().CallerAddr
 
 	err := runtime.MemStore(resultOffset, caller)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return
 	}
 
@@ -593,7 +648,7 @@ func callValue(context unsafe.Pointer, resultOffset int32) int32 {
 	metering.UseGas(gasToUse)
 
 	err := runtime.MemStore(resultOffset, invBytes)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
 
@@ -603,24 +658,24 @@ func callValue(context unsafe.Pointer, resultOffset int32) int32 {
 //export writeLog
 func writeLog(context unsafe.Pointer, pointer int32, length int32, topicPtr int32, numTopics int32) {
 	debugging.TraceCall("writeLog")
-	
+
 	runtime := arwen.GetRuntimeContext(context)
 	output := arwen.GetOutputContext(context)
 	metering := arwen.GetMeteringContext(context)
 
 	log, err := runtime.MemLoad(pointer, length)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return
 	}
 
 	topics, err := arwen.GuardedMakeByteSlice2D(numTopics)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return
 	}
 
 	for i := int32(0); i < numTopics; i++ {
 		topics[i], err = runtime.MemLoad(topicPtr+i*arwen.HashLen, arwen.HashLen)
-		if withFault(err, context) {
+		if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 			return
 		}
 	}
@@ -635,7 +690,7 @@ func writeLog(context unsafe.Pointer, pointer int32, length int32, topicPtr int3
 //export getBlockTimestamp
 func getBlockTimestamp(context unsafe.Pointer) int64 {
 	debugging.TraceCall("getBlockTimestamp")
-	
+
 	blockchain := arwen.GetBlockchainContext(context)
 	metering := arwen.GetMeteringContext(context)
 
@@ -648,7 +703,7 @@ func getBlockTimestamp(context unsafe.Pointer) int64 {
 //export getBlockNonce
 func getBlockNonce(context unsafe.Pointer) int64 {
 	debugging.TraceCall("getBlockNonce")
-	
+
 	blockchain := arwen.GetBlockchainContext(context)
 	metering := arwen.GetMeteringContext(context)
 
@@ -661,7 +716,7 @@ func getBlockNonce(context unsafe.Pointer) int64 {
 //export getBlockRound
 func getBlockRound(context unsafe.Pointer) int64 {
 	debugging.TraceCall("getBlockRound")
-	
+
 	blockchain := arwen.GetBlockchainContext(context)
 	metering := arwen.GetMeteringContext(context)
 
@@ -674,7 +729,7 @@ func getBlockRound(context unsafe.Pointer) int64 {
 //export getBlockEpoch
 func getBlockEpoch(context unsafe.Pointer) int64 {
 	debugging.TraceCall("getBlockEpoch")
-	
+
 	blockchain := arwen.GetBlockchainContext(context)
 	metering := arwen.GetMeteringContext(context)
 
@@ -697,7 +752,7 @@ func getBlockRandomSeed(context unsafe.Pointer, pointer int32) {
 
 	randomSeed := blockchain.CurrentRandomSeed()
 	err := runtime.MemStore(pointer, randomSeed)
-	withFault(err, context)
+	arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution())
 }
 
 //export getStateRootHash
@@ -713,13 +768,13 @@ func getStateRootHash(context unsafe.Pointer, pointer int32) {
 
 	stateRootHash := blockchain.GetStateRootHash()
 	err := runtime.MemStore(pointer, stateRootHash)
-	withFault(err, context)
+	arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution())
 }
 
 //export getPrevBlockTimestamp
 func getPrevBlockTimestamp(context unsafe.Pointer) int64 {
 	debugging.TraceCall("getPrevBlockTimestamp")
-	
+
 	blockchain := arwen.GetBlockchainContext(context)
 	metering := arwen.GetMeteringContext(context)
 
@@ -732,7 +787,7 @@ func getPrevBlockTimestamp(context unsafe.Pointer) int64 {
 //export getPrevBlockNonce
 func getPrevBlockNonce(context unsafe.Pointer) int64 {
 	debugging.TraceCall("getPrevBlockNonce")
-	
+
 	blockchain := arwen.GetBlockchainContext(context)
 	metering := arwen.GetMeteringContext(context)
 
@@ -745,7 +800,7 @@ func getPrevBlockNonce(context unsafe.Pointer) int64 {
 //export getPrevBlockRound
 func getPrevBlockRound(context unsafe.Pointer) int64 {
 	debugging.TraceCall("getPrevBlockRound")
-	
+
 	blockchain := arwen.GetBlockchainContext(context)
 	metering := arwen.GetMeteringContext(context)
 
@@ -758,7 +813,7 @@ func getPrevBlockRound(context unsafe.Pointer) int64 {
 //export getPrevBlockEpoch
 func getPrevBlockEpoch(context unsafe.Pointer) int64 {
 	debugging.TraceCall("getPrevBlockEpoch")
-	
+
 	blockchain := arwen.GetBlockchainContext(context)
 	metering := arwen.GetMeteringContext(context)
 
@@ -781,7 +836,7 @@ func getPrevBlockRandomSeed(context unsafe.Pointer, pointer int32) {
 
 	randomSeed := blockchain.LastRandomSeed()
 	err := runtime.MemStore(pointer, randomSeed)
-	withFault(err, context)
+	arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution())
 }
 
 //export returnData
@@ -793,7 +848,7 @@ func returnData(context unsafe.Pointer, pointer int32, length int32) {
 	metering := arwen.GetMeteringContext(context)
 
 	data, err := runtime.MemLoad(pointer, length)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return
 	}
 
@@ -827,13 +882,13 @@ func int64getArgument(context unsafe.Pointer, id int32) int64 {
 //export int64storageStore
 func int64storageStore(context unsafe.Pointer, keyOffset int32, value int64) int32 {
 	debugging.TraceCall("int64storageStore")
-	
+
 	runtime := arwen.GetRuntimeContext(context)
 	storage := arwen.GetStorageContext(context)
 	metering := arwen.GetMeteringContext(context)
 
 	key, err := runtime.MemLoad(keyOffset, arwen.HashLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
 
@@ -855,7 +910,7 @@ func int64storageLoad(context unsafe.Pointer, keyOffset int32) int64 {
 	metering := arwen.GetMeteringContext(context)
 
 	key, err := runtime.MemLoad(keyOffset, arwen.HashLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 0
 	}
 
@@ -874,7 +929,7 @@ func int64storageLoad(context unsafe.Pointer, keyOffset int32) int64 {
 //export int64finish
 func int64finish(context unsafe.Pointer, value int64) {
 	debugging.TraceCall("int64finish")
-	
+
 	output := arwen.GetOutputContext(context)
 	metering := arwen.GetMeteringContext(context)
 
@@ -909,12 +964,12 @@ func executeOnSameContext(
 
 	send := runtime.GetSCAddress()
 	dest, err := runtime.MemLoad(addressOffset, arwen.AddressLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
 	value, err := runtime.MemLoad(valueOffset, arwen.BalanceLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
@@ -940,7 +995,7 @@ func executeOnSameContext(
 		Function:      function,
 	}
 
-	err = host.ExecuteOnDestContext(contractCallInput)
+	err = host.ExecuteOnSameContext(contractCallInput)
 	if err != nil {
 		return 1
 	}
@@ -967,12 +1022,12 @@ func executeOnDestContext(
 
 	send := runtime.GetSCAddress()
 	dest, err := runtime.MemLoad(addressOffset, arwen.AddressLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
 	value, err := runtime.MemLoad(valueOffset, arwen.BalanceLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
@@ -997,7 +1052,7 @@ func executeOnDestContext(
 		Function:      function,
 	}
 
-	err = host.ExecuteOnDestContext(contractCallInput)
+	_, err = host.ExecuteOnDestContext(contractCallInput)
 	if err != nil {
 		return 1
 	}
@@ -1016,13 +1071,13 @@ func getArgumentsFromMemory(
 	runtime := arwen.GetRuntimeContext(context)
 
 	argumentsLengthData, err := runtime.MemLoad(argumentsLengthOffset, numArguments*4)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return "", nil, 0
 	}
 
 	currOffset := dataOffset
 	data, err := arwen.GuardedMakeByteSlice2D(numArguments)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return "", nil, 0
 	}
 
@@ -1031,7 +1086,7 @@ func getArgumentsFromMemory(
 		actualLen := dataToInt32(currArgLenData)
 
 		data[i], err = runtime.MemLoad(currOffset, actualLen)
-		if withFault(err, context) {
+		if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 			return "", nil, 0
 		}
 
@@ -1039,7 +1094,7 @@ func getArgumentsFromMemory(
 	}
 
 	function, err := runtime.MemLoad(functionOffset, functionLength)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return "", nil, 0
 	}
 
@@ -1063,7 +1118,7 @@ func delegateExecution(
 	metering := host.Metering()
 
 	address, err := runtime.MemLoad(addressOffset, arwen.HashLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
@@ -1124,7 +1179,7 @@ func executeReadOnly(
 	metering := host.Metering()
 
 	address, err := runtime.MemLoad(addressOffset, arwen.HashLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
@@ -1179,12 +1234,12 @@ func createContract(
 
 	sender := runtime.GetSCAddress()
 	value, err := runtime.MemLoad(valueOffset, arwen.BalanceLen)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
 	code, err := runtime.MemLoad(codeOffset, length)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
@@ -1212,7 +1267,7 @@ func createContract(
 	}
 
 	err = runtime.MemStore(resultOffset, newAddress)
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 1
 	}
 
@@ -1262,23 +1317,9 @@ func getReturnData(context unsafe.Pointer, resultId int32, dataOffset int32) int
 	}
 
 	err := runtime.MemStore(dataOffset, returnData[resultId])
-	if withFault(err, context) {
+	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return 0
 	}
 
 	return int32(len(returnData[resultId]))
-}
-
-func withFault(err error, context unsafe.Pointer) bool {
-	if err != nil {
-		runtime := arwen.GetRuntimeContext(context)
-		metering := arwen.GetMeteringContext(context)
-
-		runtime.SignalUserError(err.Error())
-		metering.UseGas(metering.GasLeft())
-
-		return true
-	}
-
-	return false
 }
