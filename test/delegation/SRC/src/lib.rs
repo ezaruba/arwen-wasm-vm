@@ -204,7 +204,7 @@ pub trait Delegation {
             return Err("cannot change nr of nodes while active"); 
         }
         self._set_num_nodes(num_nodes);
-        self._set_bls_keys(Vec::with_capacity(0)); // reset BLS keys
+        self._set_bls_keys(Vec::with_capacity(1024)); // reset BLS keys
         Ok(())
     }
 
