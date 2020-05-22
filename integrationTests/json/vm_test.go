@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	logger.SetLogLevel("*:DEBUG")
+	logger.SetLogLevel("*:TRACE")
 }
 
 func getTestRoot() string {
