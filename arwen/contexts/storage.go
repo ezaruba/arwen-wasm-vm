@@ -139,17 +139,22 @@ func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.Stora
 
 	fmt.Println("line 140")
 	if bytes.Equal(oldValue, zero) {
+		fmt.Println("line 142")
 		useGas := metering.GasSchedule().BaseOperationCost.StorePerByte * uint64(length)
+		fmt.Println("line 144")
 		metering.UseGas(useGas)
+		fmt.Println("line 146")
 		return arwen.StorageAdded, nil
 	}
 	if bytes.Equal(value, zero) {
+		fmt.Println("line 150")
 		freeGas := metering.GasSchedule().BaseOperationCost.ReleasePerByte * uint64(lengthOldValue)
+		fmt.Println("line 152")
 		metering.FreeGas(freeGas)
+		fmt.Println("line 154")
 		return arwen.StorageDeleted, nil
 	}
 
-	fmt.Println("line 152")
 	newValueExtraLength := length - lengthOldValue
 	if newValueExtraLength > 0 {
 		useGas := metering.GasSchedule().BaseOperationCost.PersistPerByte * uint64(lengthOldValue)
