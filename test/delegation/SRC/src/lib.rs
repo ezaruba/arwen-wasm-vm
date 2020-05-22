@@ -197,6 +197,7 @@ pub trait Delegation {
     fn _set_num_nodes(&self, num_nodes: usize);
 
     fn setNumNodes(&self, num_nodes: usize) -> Result<(), &str> {
+        return Err("test error"); 
         // if self.get_caller() != self.getContractOwner() {
         //     return Err("only owner can change the number of nodes"); 
         // }
@@ -205,7 +206,7 @@ pub trait Delegation {
         // }
         // self._set_num_nodes(num_nodes);
         // self._set_bls_keys(Vec::with_capacity(0)); // reset BLS keys
-        Ok(())
+        //Ok(())
     }
 
     #[view]
