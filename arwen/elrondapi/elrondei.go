@@ -55,6 +55,7 @@ package elrondapi
 import "C"
 
 import (
+	"fmt"
 	"math/big"
 	"unsafe"
 
@@ -508,11 +509,13 @@ func getNumArguments(context unsafe.Pointer) int32 {
 
 //export storageStore
 func storageStore(context unsafe.Pointer, keyOffset int32, keyLength int32, dataOffset int32, dataLength int32) int32 {
+	fmt.Println("elrondei.storageStore", keyLength, dataLength)
 	runtime := arwen.GetRuntimeContext(context)
 	storage := arwen.GetStorageContext(context)
 	metering := arwen.GetMeteringContext(context)
 
 	key, err := runtime.MemLoad(keyOffset, keyLength)
+	fmt.Println("elrondei.storageStore", "key", key, "err", err)
 	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
