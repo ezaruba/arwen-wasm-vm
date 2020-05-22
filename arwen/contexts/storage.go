@@ -2,7 +2,9 @@ package contexts
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
+	"fmt"
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
 	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
@@ -69,12 +71,15 @@ func (context *storageContext) GetStorageUpdates(address []byte) map[string]*vmc
 }
 
 func (context *storageContext) GetStorage(key []byte) []byte {
+	fmt.Println("storageContext.GetStorage()", string(key))
 	storageUpdates := context.GetStorageUpdates(context.address)
 	if storageUpdate, ok := storageUpdates[string(key)]; ok {
 		return storageUpdate.Data
 	}
 
-	value, _ := context.blockChainHook.GetStorageData(context.address, key)
+	fmt.Println("context.blockChainHook.GetStorageData()", string(context.address))
+	value, err := context.blockChainHook.GetStorageData(context.address, key)
+	fmt.Println("context.blockChainHook.GetStorageData()", "err", err, "value", hex.EncodeToString(value))
 	if value != nil {
 		storageUpdates[string(key)] = &vmcommon.StorageUpdate{
 			Offset: key,
