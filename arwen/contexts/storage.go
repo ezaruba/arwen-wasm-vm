@@ -95,6 +95,7 @@ func (context *storageContext) isElrondReservedKey(key []byte) bool {
 }
 
 func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.StorageStatus, error) {
+	fmt.Println("storageContext.SetStorage()", string(key), "value", hex.EncodeToString(value))
 	if context.isElrondReservedKey(key) {
 		return arwen.StorageUnchanged, arwen.ErrStoreElrondReservedKey
 	}
@@ -103,6 +104,7 @@ func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.Stora
 		return arwen.StorageUnchanged, nil
 	}
 
+	fmt.Println("context.host.Metering()...")
 	metering := context.host.Metering()
 	var zero []byte
 	strKey := string(key)
@@ -120,6 +122,7 @@ func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.Stora
 		oldValue = update.Data
 	}
 
+	fmt.Println("line 125")
 	lengthOldValue := len(oldValue)
 	if bytes.Equal(oldValue, value) {
 		useGas := metering.GasSchedule().BaseOperationCost.DataCopyPerByte * uint64(length)
@@ -134,6 +137,7 @@ func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.Stora
 	copy(newUpdate.Data[:length], value[:length])
 	storageUpdates[strKey] = newUpdate
 
+	fmt.Println("line 140")
 	if bytes.Equal(oldValue, zero) {
 		useGas := metering.GasSchedule().BaseOperationCost.StorePerByte * uint64(length)
 		metering.UseGas(useGas)
@@ -145,6 +149,7 @@ func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.Stora
 		return arwen.StorageDeleted, nil
 	}
 
+	fmt.Println("line 152")
 	newValueExtraLength := length - lengthOldValue
 	if newValueExtraLength > 0 {
 		useGas := metering.GasSchedule().BaseOperationCost.PersistPerByte * uint64(lengthOldValue)
