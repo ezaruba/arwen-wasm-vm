@@ -146,7 +146,7 @@ func TestDelegationContract(t *testing.T) {
 	err = runner.RunAllJSONScenariosInDirectory(
 		getTestRoot(),
 		"delegation",
-		".scen.json",
+		"init.scen.json",
 		[]string{})
 
 	if err != nil {
