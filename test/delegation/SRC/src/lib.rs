@@ -203,7 +203,7 @@ pub trait Delegation {
         if !self.stakeState().is_open() {
             return Err("cannot change nr of nodes while active"); 
         }
-        // self._set_num_nodes(num_nodes);
+        self._set_num_nodes(num_nodes);
         // self._set_bls_keys(Vec::with_capacity(0)); // reset BLS keys
         Ok(())
     }
