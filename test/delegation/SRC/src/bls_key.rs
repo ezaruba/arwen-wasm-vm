@@ -20,9 +20,9 @@ impl Serialize for BLSKey {
         S: Serializer,
     {
         let mut seq = serializer.serialize_tuple(BLS_KEY_BYTE_LENGTH)?;
-        for i in 0..BLS_KEY_BYTE_LENGTH {
-            seq.serialize_element(&self.0[i])?;
-        }
+        // for i in 0..BLS_KEY_BYTE_LENGTH {
+        //     seq.serialize_element(&self.0[i])?;
+        // }
         seq.end()
     }
 }
