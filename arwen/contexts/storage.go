@@ -3,6 +3,7 @@ package contexts
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
@@ -92,8 +93,14 @@ func (context *storageContext) isElrondReservedKey(key []byte) bool {
 
 var dummyMutex sync.Mutex
 
+func dummyGoRoutine() {
+	fmt.Println("dummyGoRoutine")
+}
+
 func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.StorageStatus, error) {
-	log.Info("SetStorage", "key", key, "value", value)
+	fmt.Println("launch dummy routine")
+	go dummyGoRoutine()
+	//log.Info("SetStorage", "key", key, "value", value)
 	if context.isElrondReservedKey(key) {
 		return arwen.StorageUnchanged, arwen.ErrStoreElrondReservedKey
 	}
