@@ -1,4 +1,4 @@
-.PHONY: test build build-arwen clean
+.PHONY: test test-short build build-arwen clean
 
 clean:
 	go clean -cache -testcache
@@ -12,6 +12,9 @@ build-arwen:
 
 test: clean build-arwen
 	go test -count=1 ./...
+
+test-short: build-arwen
+	go test -short -count=1 ./...
 
 build-c-contracts:
 	erdpy build ./test/contracts/erc20
