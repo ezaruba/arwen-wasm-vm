@@ -1,7 +1,6 @@
 package nodepart
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -67,7 +66,7 @@ func (part *NodePart) noopReplier(message common.MessageHandler) common.MessageH
 
 // StartLoop runs the main loop
 func (part *NodePart) StartLoop(request common.MessageHandler) (common.MessageHandler, error) {
-	defer part.timeTrack(time.Now(), "[NODE] end of loop")
+	//defer part.timeTrack(time.Now(), "[NODE] end of loop")
 
 	err := part.Messenger.SendContractRequest(request)
 	if err != nil {
@@ -121,7 +120,7 @@ func (part *NodePart) doLoop() (common.MessageHandler, error) {
 }
 
 func (part *NodePart) replyToHookCallRequest(request common.MessageHandler) error {
-	defer part.timeTrack(time.Now(), fmt.Sprintf("replyToHookCallRequest %s", request.GetKindName()))
+	//defer part.timeTrack(time.Now(), fmt.Sprintf("replyToHookCallRequest %s", request.GetKindName()))
 
 	replier := part.Repliers[request.GetKind()]
 	hookResponse := replier(request)
