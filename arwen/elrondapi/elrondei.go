@@ -836,7 +836,9 @@ func int64storageStore(context unsafe.Pointer, keyOffset int32, keyLength int32,
 	gasToUse := metering.GasSchedule().ElrondAPICost.Int64StorageStore
 	metering.UseGas(gasToUse)
 
+	log.Info("int64storageStore before SetStorage")
 	storageStatus, err := storage.SetStorage(key, data.Bytes())
+	log.Info("int64storageStore before SetStorage")
 	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
