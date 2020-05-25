@@ -90,12 +90,12 @@ func (context *storageContext) isElrondReservedKey(key []byte) bool {
 }
 
 func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.StorageStatus, error) {
-	// NOLOG log.Info("SetStorage", "key", key, "value", value)
+	log.Info("SetStorage", "key", key, "value", value)
 	if context.isElrondReservedKey(key) {
 		return arwen.StorageUnchanged, arwen.ErrStoreElrondReservedKey
 	}
 
-	// NOLOG log.Info("SetStorage A")
+	log.Info("SetStorage A")
 	if context.host.Runtime().ReadOnly() {
 		return arwen.StorageUnchanged, nil
 	}
@@ -163,6 +163,6 @@ func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.Stora
 		metering.FreeGas(freeGas)
 	}
 
-	// NOLOG log.Info("SetStorage END")
+	log.Info("SetStorage END")
 	return arwen.StorageModified, nil
 }
