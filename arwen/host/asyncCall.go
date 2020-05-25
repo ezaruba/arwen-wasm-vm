@@ -130,6 +130,7 @@ func (host *vmHost) createDestinationContractCallInput() (*vmcommon.ContractCall
 }
 
 func (host *vmHost) createCallbackContractCallInput(destinationVMOutput *vmcommon.VMOutput, destinationErr error) (*vmcommon.ContractCallInput, error) {
+	log.Info("createCallbackContractCallInput BEGIN")
 	metering := host.Metering()
 	runtime := host.Runtime()
 
@@ -154,6 +155,7 @@ func (host *vmHost) createCallbackContractCallInput(destinationVMOutput *vmcommo
 	gasToUse := metering.GasSchedule().ElrondAPICost.AsyncCallStep
 	gasToUse += metering.GasSchedule().BaseOperationCost.DataCopyPerByte * uint64(dataLength)
 	if gasLimit <= gasToUse {
+		log.Info("createCallbackContractCallInput err", arwen.ErrNotEnoughGas)
 		return nil, arwen.ErrNotEnoughGas
 	}
 	gasLimit -= gasToUse
@@ -177,6 +179,7 @@ func (host *vmHost) createCallbackContractCallInput(destinationVMOutput *vmcommo
 		Function:      function,
 	}
 
+	log.Info("createCallbackContractCallInput END")
 	return contractCallInput, nil
 }
 
