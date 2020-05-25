@@ -131,6 +131,7 @@ func (host *vmHost) doRunSmartContractCall(input *vmcommon.ContractCallInput) (v
 
 	err = host.callSCMethod()
 	if err != nil {
+		log.Warn("output.CreateVMOutputInCaseOfError(err)", "err", err)
 		return output.CreateVMOutputInCaseOfError(err)
 	}
 
@@ -471,6 +472,7 @@ func (host *vmHost) callInitFunction() error {
 }
 
 func (host *vmHost) callSCMethod() error {
+	log.Info("callSCMethod")
 	runtime := host.Runtime()
 
 	err := host.verifyAllowedFunctionCall()
@@ -479,13 +481,17 @@ func (host *vmHost) callSCMethod() error {
 	}
 
 	function, err := runtime.GetFunctionToCall()
+	log.Info("callSCMethod", "function", function)
 	if err != nil {
 		return err
 	}
 
 	_, err = function()
+	log.Info("function called", "function", function, "err", err)
 	if err != nil {
+		log.Info("handleBreakpointIfAny() start")
 		err = host.handleBreakpointIfAny(err)
+		log.Info("handleBreakpointIfAny() end", "err", err)
 	}
 
 	return err
