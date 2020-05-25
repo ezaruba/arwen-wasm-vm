@@ -100,6 +100,7 @@ func dummyGoRoutine() {
 func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.StorageStatus, error) {
 	fmt.Println("launch dummy routine")
 	go dummyGoRoutine()
+	fmt.Println("launched dummy routine")
 	//log.Info("SetStorage", "key", key, "value", value)
 	if context.isElrondReservedKey(key) {
 		return arwen.StorageUnchanged, arwen.ErrStoreElrondReservedKey
