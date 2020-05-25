@@ -62,7 +62,10 @@ import (
 	"github.com/ElrondNetwork/arwen-wasm-vm/wasmer"
 	twos "github.com/ElrondNetwork/big-int-util/twos-complement"
 	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
+	logger "github.com/ElrondNetwork/elrond-go-logger"
 )
+
+var log = logger.GetOrCreate("elrondei")
 
 // ElrondEIImports creates a new wasmer.Imports populated with the ElrondEI API methods
 func ElrondEIImports() (*wasmer.Imports, error) {
@@ -395,6 +398,7 @@ func transferValue(context unsafe.Pointer, destOffset int32, valueOffset int32, 
 
 //export asyncCall
 func asyncCall(context unsafe.Pointer, destOffset int32, valueOffset int32, dataOffset int32, length int32) {
+	log.Info("asyncCall BEGIN")
 	runtime := arwen.GetRuntimeContext(context)
 	metering := arwen.GetMeteringContext(context)
 
@@ -438,6 +442,7 @@ func asyncCall(context unsafe.Pointer, destOffset int32, valueOffset int32, data
 
 	// Instruct Wasmer to interrupt the execution of the caller SC.
 	runtime.SetRuntimeBreakpointValue(arwen.BreakpointAsyncCall)
+	log.Info("asyncCall END")
 }
 
 //export getArgumentLength
