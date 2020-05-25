@@ -15,7 +15,7 @@ import (
 var elrondReservedTestPrefix = []byte("RESERVED")
 
 func TestNewStorageContext(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostMock{}
 	mockBlockchain := &mock.BlockchainHookMock{}
@@ -26,7 +26,7 @@ func TestNewStorageContext(t *testing.T) {
 }
 
 func TestStorageContext_SetAddress(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	addressA := []byte("accountA")
 	addressB := []byte("accountB")
@@ -97,7 +97,7 @@ func TestStorageContext_StateStack(t *testing.T) {
 }
 
 func TestStorageContext_GetStorageUpdates(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	mockOutput := &mock.OutputContextMock{}
 	account := mockOutput.NewVMOutputAccount([]byte("account"))
@@ -123,7 +123,7 @@ func TestStorageContext_GetStorageUpdates(t *testing.T) {
 }
 
 func TestStorageContext_SetStorage(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	address := []byte("account")
 	mockOutput := &mock.OutputContextMock{}

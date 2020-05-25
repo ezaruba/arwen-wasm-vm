@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewBigInt(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	bigIntContext, err := NewBigIntContext()
 
@@ -22,7 +22,7 @@ func TestNewBigInt(t *testing.T) {
 }
 
 func TestBigIntContext_InitPushPopState(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	value1, value2, value3 := int64(100), int64(200), int64(-42)
 	bigIntContext, _ := NewBigIntContext()
@@ -90,7 +90,7 @@ func TestBigIntContext_InitPushPopState(t *testing.T) {
 }
 
 func TestBigIntContext_PutGet(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	value1, value2, value3 := int64(100), int64(200), int64(-42)
 	bigIntContext, _ := NewBigIntContext()

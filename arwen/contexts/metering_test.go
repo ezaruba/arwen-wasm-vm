@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewMeteringContext(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostMock{}
 
@@ -22,7 +22,7 @@ func TestNewMeteringContext(t *testing.T) {
 }
 
 func TestNewMeteringContext_NilGasSchedule(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostMock{}
 
@@ -32,7 +32,7 @@ func TestNewMeteringContext_NilGasSchedule(t *testing.T) {
 }
 
 func TestMeteringContext_GasSchedule(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostStub{}
 	meteringContext, _ := NewMeteringContext(host, config.MakeGasMapForTests(), uint64(15000))
@@ -42,7 +42,7 @@ func TestMeteringContext_GasSchedule(t *testing.T) {
 }
 
 func TestMeteringContext_UseGas(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	mockRuntime := &mock.RuntimeContextMock{}
 	vmInput := &vmcommon.VMInput{GasProvided: 0}
@@ -69,7 +69,7 @@ func TestMeteringContext_UseGas(t *testing.T) {
 }
 
 func TestMeteringContext_FreeGas(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	mockOutput := &mock.OutputContextMock{}
 	host := &mock.VmHostMock{
@@ -89,7 +89,7 @@ func TestMeteringContext_FreeGas(t *testing.T) {
 }
 
 func TestMeteringContext_BoundGasLimit(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	mockRuntime := &mock.RuntimeContextMock{}
 	host := &mock.VmHostMock{
@@ -116,7 +116,7 @@ func TestMeteringContext_BoundGasLimit(t *testing.T) {
 }
 
 func TestMeteringContext_DeductInitialGasForExecution(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	mockRuntime := &mock.RuntimeContextMock{}
 	gasProvided := uint64(10000)
@@ -142,7 +142,7 @@ func TestMeteringContext_DeductInitialGasForExecution(t *testing.T) {
 }
 
 func TestDeductInitialGasForDirectDeployment(t *testing.T) {
-	t.Parallel()
+	// no parallel
 	mockRuntime := &mock.RuntimeContextMock{}
 	gasProvided := uint64(10000)
 	contractCode := []byte("contractCode")
@@ -174,7 +174,7 @@ func TestDeductInitialGasForDirectDeployment(t *testing.T) {
 }
 
 func TestDeductInitialGasForIndirectDeployment(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	mockRuntime := &mock.RuntimeContextMock{}
 	gasProvided := uint64(10000)
@@ -207,7 +207,7 @@ func TestDeductInitialGasForIndirectDeployment(t *testing.T) {
 }
 
 func TestMeteringContext_AsyncCallGasLocking(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	mockRuntime := &mock.RuntimeContextMock{}
 	contractCode := []byte("contractCode")
@@ -235,8 +235,8 @@ func TestMeteringContext_AsyncCallGasLocking(t *testing.T) {
 	input.GasProvided = gasProvided
 	err = meteringContext.deductAndLockGasIfAsyncStep()
 	require.Nil(t, err)
-	require.Equal(t, uint64(config.AsyncCallbackGasLockForTests + 1), meteringContext.gasLockedForAsyncStep)
-	require.Equal(t, gasProvided - config.AsyncCallbackGasLockForTests - 2, meteringContext.GasLeft())
+	require.Equal(t, uint64(config.AsyncCallbackGasLockForTests+1), meteringContext.gasLockedForAsyncStep)
+	require.Equal(t, gasProvided-config.AsyncCallbackGasLockForTests-2, meteringContext.GasLeft())
 
 	meteringContext.UnlockGasIfAsyncStep()
 	require.Equal(t, gasProvided-1, meteringContext.GasLeft())

@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewOutputContext(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostStub{}
 
@@ -40,7 +40,7 @@ func TestNewOutputContext(t *testing.T) {
 }
 
 func TestOutputContext_PushPopState(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostStub{}
 	outputContext, _ := NewOutputContext(host)
@@ -103,7 +103,7 @@ func TestOutputContext_PushPopState(t *testing.T) {
 }
 
 func TestOutputContext_GetOutputAccount(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostStub{}
 	outputContext, _ := NewOutputContext(host)
@@ -175,7 +175,7 @@ func TestOutputContext_FinishReturnData(t *testing.T) {
 }
 
 func TestOutputContext_MergeCompleteAccounts(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	left := &vmcommon.OutputAccount{
 		Address:        []byte("addr1"),
@@ -214,7 +214,7 @@ func TestOutputContext_MergeCompleteAccounts(t *testing.T) {
 }
 
 func TestOutputContext_MergeIncompleteAccounts(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	left := &vmcommon.OutputAccount{}
 	right := &vmcommon.OutputAccount{}
@@ -293,7 +293,7 @@ func TestOutputContext_MergeIncompleteAccounts(t *testing.T) {
 }
 
 func TestOutputContext_MergeVMOutputs(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	left := newVMOutput()
 	right := newVMOutput()
@@ -355,7 +355,7 @@ func TestOutputContext_MergeVMOutputs(t *testing.T) {
 }
 
 func TestOutputContext_VMOutputError(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostMock{}
 	host.MeteringContext = &mock.MeteringContextMock{
@@ -378,7 +378,7 @@ func TestOutputContext_VMOutputError(t *testing.T) {
 }
 
 func TestOutputContext_Transfer(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	sender := []byte("sender")
 	receiver := []byte("receiver")
@@ -415,7 +415,7 @@ func TestOutputContext_Transfer(t *testing.T) {
 }
 
 func TestOutputContext_Transfer_Errors_And_Checks(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	sender := []byte("sender")
 	receiver := []byte("receiver")
@@ -463,7 +463,7 @@ func TestOutputContext_Transfer_Errors_And_Checks(t *testing.T) {
 }
 
 func TestOutputContext_WriteLog(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostMock{
 		RuntimeContext: &mock.RuntimeContextMock{},

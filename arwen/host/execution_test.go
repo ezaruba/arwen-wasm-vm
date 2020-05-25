@@ -338,7 +338,7 @@ func TestExecution_ExecuteOnSameContext_Simple(t *testing.T) {
 }
 
 func TestExecution_Call_Breakpoints(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	code := GetTestSCCode("breakpoint", "../../")
 	host, _ := DefaultTestArwenForCall(t, code)

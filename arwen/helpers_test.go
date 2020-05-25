@@ -8,7 +8,7 @@ import (
 )
 
 func TestGuardedMakeByteSlice2D(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	byteSlice, err := GuardedMakeByteSlice2D(-1)
 	require.Error(t, err)
@@ -20,7 +20,7 @@ func TestGuardedMakeByteSlice2D(t *testing.T) {
 }
 
 func TestGuardedGetBytesSlice(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	dataSlice := []byte("data1_data2_data3_data4")
 
@@ -39,7 +39,7 @@ func TestGuardedGetBytesSlice(t *testing.T) {
 }
 
 func TestInverseBytes(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	data := []byte("qwerty")
 	expectedData := []byte("ytrewq")

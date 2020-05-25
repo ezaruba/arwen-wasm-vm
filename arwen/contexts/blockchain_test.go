@@ -26,7 +26,7 @@ var testAccounts = []*mock.Account{
 }
 
 func TestNewBlockchainContext(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostStub{}
 	blockchainHook := mock.NewBlockchainHookMock()
@@ -37,7 +37,7 @@ func TestNewBlockchainContext(t *testing.T) {
 }
 
 func TestBlockchainContext_AccountExists(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostStub{}
 	blockchainHook := mock.NewBlockchainHookMock()
@@ -54,7 +54,7 @@ func TestBlockchainContext_AccountExists(t *testing.T) {
 }
 
 func TestBlockchainContext_GetBalance(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	blockchainHook := mock.NewBlockchainHookMock()
 	blockchainHook.AddAccounts(testAccounts)
@@ -104,7 +104,7 @@ func TestBlockchainContext_GetBalance(t *testing.T) {
 }
 
 func TestBlockchainContext_GetBalance_Updates(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	blockchainHook := mock.NewBlockchainHookMock()
 	blockchainHook.AddAccounts(testAccounts)
@@ -133,7 +133,7 @@ func TestBlockchainContext_GetBalance_Updates(t *testing.T) {
 }
 
 func TestBlockchainContext_GetNonceAndIncrease(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	account := &vmcommon.OutputAccount{
 		Nonce: 3,
@@ -188,7 +188,7 @@ func TestBlockchainContext_GetNonceAndIncrease(t *testing.T) {
 }
 
 func TestBlockchainContext_GetCodeHashAndSize(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	mockCrypto := &mock.CryptoHookMock{}
 
@@ -251,7 +251,7 @@ func TestBlockchainContext_GetCodeHashAndSize(t *testing.T) {
 }
 
 func TestBlockchainContext_NewAddress(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	mockOutput := &mock.OutputContextMock{}
 
@@ -352,7 +352,7 @@ func TestBlockchainContext_NewAddress(t *testing.T) {
 }
 
 func TestBlockchainContext_BlockHash(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostMock{}
 	blockchainHook := mock.NewBlockchainHookMock()
@@ -377,7 +377,7 @@ func TestBlockchainContext_BlockHash(t *testing.T) {
 }
 
 func TestBlockchainContext_Getters(t *testing.T) {
-	t.Parallel()
+	// no parallel
 
 	host := &mock.VmHostMock{}
 	blockchainHook := &mock.BlockchainHookMock{
