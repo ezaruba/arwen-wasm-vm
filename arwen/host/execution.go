@@ -9,30 +9,32 @@ func (host *vmHost) doRunSmartContractCreate(input *vmcommon.ContractCreateInput
 	host.InitState()
 	defer host.Clean()
 
-	_, blockchain, _, output, runtime, storage := host.GetContexts()
+	_, _, _, output, _, _ := host.GetContexts()
+	return output.CreateVMOutputInCaseOfError(errCodeNotFound)
+	// _, blockchain, _, output, runtime, storage := host.GetContexts()
 
-	address, err := blockchain.NewAddress(input.CallerAddr)
-	if err != nil {
-		return output.CreateVMOutputInCaseOfError(err)
-	}
+	// address, err := blockchain.NewAddress(input.CallerAddr)
+	// if err != nil {
+	// 	return output.CreateVMOutputInCaseOfError(err)
+	// }
 
-	runtime.SetVMInput(&input.VMInput)
-	runtime.SetSCAddress(address)
+	// runtime.SetVMInput(&input.VMInput)
+	// runtime.SetSCAddress(address)
 
-	output.AddTxValueToAccount(address, input.CallValue)
-	storage.SetAddress(runtime.GetSCAddress())
+	// output.AddTxValueToAccount(address, input.CallValue)
+	// storage.SetAddress(runtime.GetSCAddress())
 
-	codeDeployInput := arwen.CodeDeployInput{
-		ContractCode:         input.ContractCode,
-		ContractCodeMetadata: input.ContractCodeMetadata,
-		ContractAddress:      address,
-	}
+	// codeDeployInput := arwen.CodeDeployInput{
+	// 	ContractCode:         input.ContractCode,
+	// 	ContractCodeMetadata: input.ContractCodeMetadata,
+	// 	ContractAddress:      address,
+	// }
 
-	vmOutput, err := host.performCodeDeploy(codeDeployInput)
-	if err != nil {
-		return output.CreateVMOutputInCaseOfError(err)
-	}
-	return vmOutput
+	// vmOutput, err := host.performCodeDeploy(codeDeployInput)
+	// if err != nil {
+	// 	return output.CreateVMOutputInCaseOfError(err)
+	// }
+	// return vmOutput
 }
 
 func (host *vmHost) performCodeDeploy(input arwen.CodeDeployInput) (*vmcommon.VMOutput, error) {
