@@ -142,21 +142,29 @@ func (host *vmHost) doRunSmartContractCall(input *vmcommon.ContractCallInput) (v
 }
 
 func (host *vmHost) ExecuteOnDestContext(input *vmcommon.ContractCallInput) (vmOutput *vmcommon.VMOutput, err error) {
-	log.Trace("ExecuteOnDestContext", "function", input.Function)
+	log.Info("ExecuteOnDestContext", "function", input.Function)
 
 	bigInt, _, _, output, runtime, storage := host.GetContexts()
 
 	bigInt.PushState()
 	bigInt.InitState()
 
+	log.Info("ExecuteOnDestContext A")
+
 	output.PushState()
 	output.CensorVMOutput()
+
+	log.Info("ExecuteOnDestContext B")
 
 	runtime.PushState()
 	runtime.InitStateFromContractCallInput(input)
 
+	log.Info("ExecuteOnDestContext C")
+
 	storage.PushState()
 	storage.SetAddress(host.Runtime().GetSCAddress())
+
+	log.Info("ExecuteOnDestContext D")
 
 	defer func() {
 		vmOutput = host.finishExecuteOnDestContext(err)
@@ -175,9 +183,12 @@ func (host *vmHost) ExecuteOnDestContext(input *vmcommon.ContractCallInput) (vmO
 }
 
 func (host *vmHost) finishExecuteOnDestContext(executeErr error) *vmcommon.VMOutput {
+	log.Info("finishExecuteOnDestContext BEGIN")
 	bigInt, _, _, output, runtime, storage := host.GetContexts()
 
 	if executeErr != nil {
+		log.Info("finishExecuteOnDestContext ERR", "err", executeErr)
+
 		// Execution failed: restore contexts as if the execution didn't happen,
 		// but first create a vmOutput to capture the error.
 		vmOutput := output.CreateVMOutputInCaseOfError(executeErr)
@@ -202,6 +213,7 @@ func (host *vmHost) finishExecuteOnDestContext(executeErr error) *vmcommon.VMOut
 	runtime.PopSetActiveState()
 	storage.PopSetActiveState()
 
+	log.Info("finishExecuteOnDestContext END")
 	return vmOutput
 }
 
