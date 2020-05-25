@@ -20,8 +20,8 @@ func (host *vmHost) handleBreakpointIfAny(executionErr error) error {
 }
 
 func (host *vmHost) handleBreakpoint(breakpointValue arwen.BreakpointValue) error {
-	log.Info("host.handleBreakpoint(breakpointValue)")
-	
+	// NOLOG log.Info("host.handleBreakpoint(breakpointValue)")
+
 	if breakpointValue == arwen.BreakpointAsyncCall {
 		return host.handleAsyncCallBreakpoint()
 	}

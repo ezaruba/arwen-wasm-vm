@@ -19,7 +19,7 @@ func NewDebugFacade() {
 
 // DeploySmartContract -
 func (facade *DebugFacade) DeploySmartContract(request DeployRequest) (*DeployResponse, error) {
-	log.Debug("DebugFacade.DeploySmartContract()")
+	// NOLOG log.Debug("DebugFacade.DeploySmartContract()")
 
 	database := facade.loadDatabase(request.DatabasePath)
 	world, err := database.loadWorld(request.World)
@@ -54,7 +54,7 @@ func (facade *DebugFacade) loadDatabase(rootPath string) *database {
 
 // UpgradeSmartContract -
 func (facade *DebugFacade) UpgradeSmartContract(request UpgradeRequest) (*UpgradeResponse, error) {
-	log.Debug("DebugFacade.UpgradeSmartContract()")
+	// NOLOG log.Debug("DebugFacade.UpgradeSmartContract()")
 
 	database := facade.loadDatabase(request.DatabasePath)
 	world, err := database.loadWorld(request.World)
@@ -83,7 +83,7 @@ func (facade *DebugFacade) UpgradeSmartContract(request UpgradeRequest) (*Upgrad
 
 // RunSmartContract -
 func (facade *DebugFacade) RunSmartContract(request RunRequest) (*RunResponse, error) {
-	log.Debug("DebugFacade.RunSmartContract()")
+	// NOLOG log.Debug("DebugFacade.RunSmartContract()")
 
 	database := facade.loadDatabase(request.DatabasePath)
 	world, err := database.loadWorld(request.World)
@@ -112,7 +112,7 @@ func (facade *DebugFacade) RunSmartContract(request RunRequest) (*RunResponse, e
 
 // QuerySmartContract -
 func (facade *DebugFacade) QuerySmartContract(request QueryRequest) (*QueryResponse, error) {
-	log.Debug("DebugFacade.QuerySmartContracts()")
+	// NOLOG log.Debug("DebugFacade.QuerySmartContracts()")
 
 	database := facade.loadDatabase(request.DatabasePath)
 	world, err := database.loadWorld(request.World)
@@ -136,7 +136,7 @@ func (facade *DebugFacade) QuerySmartContract(request QueryRequest) (*QueryRespo
 
 // CreateAccount -
 func (facade *DebugFacade) CreateAccount(request CreateAccountRequest) (*CreateAccountResponse, error) {
-	log.Debug("DebugFacade.CreateAccount()")
+	// NOLOG log.Debug("DebugFacade.CreateAccount()")
 
 	database := facade.loadDatabase(request.DatabasePath)
 	world, err := database.loadWorld(request.World)

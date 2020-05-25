@@ -61,7 +61,7 @@ func NewNodePart(
 }
 
 func (part *NodePart) noopReplier(message common.MessageHandler) common.MessageHandler {
-	log.Error("noopReplier called")
+	// NOLOG log.Error("noopReplier called")
 	return common.CreateMessage(common.UndefinedRequestOrResponse)
 }
 
@@ -76,7 +76,7 @@ func (part *NodePart) StartLoop(request common.MessageHandler) (common.MessageHa
 
 	response, err := part.doLoop()
 	if err != nil {
-		log.Warn("[NODE]: end of loop", "err", err)
+		// NOLOG log.Warn("[NODE]: end of loop", "err", err)
 	}
 
 	part.Messenger.ResetDialogue()
@@ -139,11 +139,11 @@ func (part *NodePart) SendStopSignal() error {
 		return err
 	}
 
-	log.Warn("Node sent stop signal to Arwen.")
+	// NOLOG log.Warn("Node sent stop signal to Arwen.")
 	return nil
 }
 
 func (part *NodePart) timeTrack(start time.Time, message string) {
 	elapsed := time.Since(start)
-	log.Trace(message, "duration", elapsed)
+	// NOLOG log.Trace(message, "duration", elapsed)
 }

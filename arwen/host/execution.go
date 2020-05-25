@@ -36,7 +36,7 @@ func (host *vmHost) doRunSmartContractCreate(input *vmcommon.ContractCreateInput
 }
 
 func (host *vmHost) performCodeDeploy(input arwen.CodeDeployInput) (*vmcommon.VMOutput, error) {
-	log.Info("performCodeDeploy", "address", input.ContractAddress, "len(code)", len(input.ContractCode), "metadata", input.ContractCodeMetadata)
+	// NOLOG log.Info("performCodeDeploy", "address", input.ContractAddress, "len(code)", len(input.ContractCode), "metadata", input.ContractCodeMetadata)
 
 	_, _, metering, output, runtime, _ := host.GetContexts()
 
@@ -49,13 +49,13 @@ func (host *vmHost) performCodeDeploy(input arwen.CodeDeployInput) (*vmcommon.VM
 	vmInput := runtime.GetVMInput()
 	err = runtime.StartWasmerInstance(input.ContractCode, vmInput.GasProvided)
 	if err != nil {
-		log.Info("performCodeDeploy/StartWasmerInstance", "err", err)
+		// NOLOG log.Info("performCodeDeploy/StartWasmerInstance", "err", err)
 		return nil, arwen.ErrContractInvalid
 	}
 
 	err = runtime.VerifyContractCode()
 	if err != nil {
-		log.Info("performCodeDeploy/VerifyContractCode", "err", err)
+		// NOLOG log.Info("performCodeDeploy/VerifyContractCode", "err", err)
 		return nil, arwen.ErrContractInvalid
 	}
 
@@ -67,9 +67,9 @@ func (host *vmHost) performCodeDeploy(input arwen.CodeDeployInput) (*vmcommon.VM
 		return nil, err
 	}
 
-	log.Info("DeployCode()...")
+	// NOLOG log.Info("DeployCode()...")
 	output.DeployCode(input)
-	log.Info("DeployCode()... deployed")
+	// NOLOG log.Info("DeployCode()... deployed")
 	vmOutput := output.GetVMOutput()
 	return vmOutput, nil
 }
@@ -133,7 +133,7 @@ func (host *vmHost) doRunSmartContractCall(input *vmcommon.ContractCallInput) (v
 
 	err = host.callSCMethod()
 	if err != nil {
-		log.Warn("output.CreateVMOutputInCaseOfError(err)", "err", err)
+		// NOLOG log.Warn("output.CreateVMOutputInCaseOfError(err)", "err", err)
 		return output.CreateVMOutputInCaseOfError(err)
 	}
 
@@ -144,29 +144,29 @@ func (host *vmHost) doRunSmartContractCall(input *vmcommon.ContractCallInput) (v
 }
 
 func (host *vmHost) ExecuteOnDestContext(input *vmcommon.ContractCallInput) (vmOutput *vmcommon.VMOutput, err error) {
-	log.Info("ExecuteOnDestContext", "function", input.Function)
+	// NOLOG log.Info("ExecuteOnDestContext", "function", input.Function)
 
 	bigInt, _, _, output, runtime, storage := host.GetContexts()
 
 	bigInt.PushState()
 	bigInt.InitState()
 
-	log.Info("ExecuteOnDestContext A")
+	// NOLOG log.Info("ExecuteOnDestContext A")
 
 	output.PushState()
 	output.CensorVMOutput()
 
-	log.Info("ExecuteOnDestContext B")
+	// NOLOG log.Info("ExecuteOnDestContext B")
 
 	runtime.PushState()
 	runtime.InitStateFromContractCallInput(input)
 
-	log.Info("ExecuteOnDestContext C")
+	// NOLOG log.Info("ExecuteOnDestContext C")
 
 	storage.PushState()
 	storage.SetAddress(host.Runtime().GetSCAddress())
 
-	log.Info("ExecuteOnDestContext D")
+	// NOLOG log.Info("ExecuteOnDestContext D")
 
 	defer func() {
 		vmOutput = host.finishExecuteOnDestContext(err)
@@ -185,11 +185,11 @@ func (host *vmHost) ExecuteOnDestContext(input *vmcommon.ContractCallInput) (vmO
 }
 
 func (host *vmHost) finishExecuteOnDestContext(executeErr error) *vmcommon.VMOutput {
-	log.Info("finishExecuteOnDestContext BEGIN")
+	// NOLOG log.Info("finishExecuteOnDestContext BEGIN")
 	bigInt, _, _, output, runtime, storage := host.GetContexts()
 
 	if executeErr != nil {
-		log.Info("finishExecuteOnDestContext ERR", "err", executeErr)
+		// NOLOG log.Info("finishExecuteOnDestContext ERR", "err", executeErr)
 
 		// Execution failed: restore contexts as if the execution didn't happen,
 		// but first create a vmOutput to capture the error.
@@ -215,12 +215,12 @@ func (host *vmHost) finishExecuteOnDestContext(executeErr error) *vmcommon.VMOut
 	runtime.PopSetActiveState()
 	storage.PopSetActiveState()
 
-	log.Info("finishExecuteOnDestContext END")
+	// NOLOG log.Info("finishExecuteOnDestContext END")
 	return vmOutput
 }
 
 func (host *vmHost) ExecuteOnSameContext(input *vmcommon.ContractCallInput) (err error) {
-	log.Trace("ExecuteOnSameContext", "function", input.Function)
+	// NOLOG log.Trace("ExecuteOnSameContext", "function", input.Function)
 
 	bigInt, _, _, output, runtime, _ := host.GetContexts()
 
@@ -282,7 +282,7 @@ func (host *vmHost) isBuiltinFunctionBeingCalled() bool {
 }
 
 func (host *vmHost) CreateNewContract(input *vmcommon.ContractCreateInput) ([]byte, error) {
-	log.Trace("CreateNewContract", "len(code)", len(input.ContractCode), "metadata", input.ContractCodeMetadata)
+	// NOLOG log.Trace("CreateNewContract", "len(code)", len(input.ContractCode), "metadata", input.ContractCodeMetadata)
 
 	_, blockchain, metering, output, runtime, _ := host.GetContexts()
 
@@ -471,16 +471,16 @@ func (host *vmHost) EthereumCallData() []byte {
 }
 
 func (host *vmHost) callInitFunction() error {
-	log.Info("callInitFunction")
+	// NOLOG log.Info("callInitFunction")
 	runtime := host.Runtime()
 	init := runtime.GetInitFunction()
-	log.Info("callInitFunction", "init", init)
+	// NOLOG log.Info("callInitFunction", "init", init)
 	if init == nil {
 		return nil
 	}
 
 	_, err := init()
-	log.Info("callInitFunction, called", "err", err)
+	// NOLOG log.Info("callInitFunction, called", "err", err)
 	if err != nil {
 		err = host.handleBreakpointIfAny(err)
 	}
@@ -489,7 +489,7 @@ func (host *vmHost) callInitFunction() error {
 }
 
 func (host *vmHost) callSCMethod() error {
-	log.Info("callSCMethod")
+	// NOLOG log.Info("callSCMethod")
 	runtime := host.Runtime()
 
 	err := host.verifyAllowedFunctionCall()
@@ -498,17 +498,17 @@ func (host *vmHost) callSCMethod() error {
 	}
 
 	function, err := runtime.GetFunctionToCall()
-	log.Info("callSCMethod", "function", function)
+	// NOLOG log.Info("callSCMethod", "function", function)
 	if err != nil {
 		return err
 	}
 
 	_, err = function()
-	log.Info("function called", "function", function, "err", err)
+	// NOLOG log.Info("function called", "function", function, "err", err)
 	if err != nil {
-		log.Info("handleBreakpointIfAny() start")
+		// NOLOG log.Info("handleBreakpointIfAny() start")
 		err = host.handleBreakpointIfAny(err)
-		log.Info("handleBreakpointIfAny() end", "err", err)
+		// NOLOG log.Info("handleBreakpointIfAny() end", "err", err)
 	}
 
 	return err

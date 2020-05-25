@@ -58,7 +58,7 @@ func getHostParameters() *arwen.VMHostParameters {
 
 // DeploySmartContract -
 func (world *world) DeploySmartContract(request DeployRequest) (*DeployResponse, error) {
-	log.Debug("world.DeploySmartContract()")
+	// NOLOG log.Debug("world.DeploySmartContract()")
 
 	createInput, err := world.prepareDeployInput(request)
 	if err != nil {

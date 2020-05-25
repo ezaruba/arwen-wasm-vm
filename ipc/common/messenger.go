@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/ipc/marshaling"
@@ -40,20 +39,20 @@ func NewMessenger(name string, receiver *Receiver, sender *Sender) *Messenger {
 func (messenger *Messenger) Send(message MessageHandler) error {
 	messenger.Nonce++
 	message.SetNonce(messenger.Nonce)
-	length, err := messenger.sender.Send(message)
-	log.Trace(fmt.Sprintf("[%s][#%d]: SENT message", messenger.Name, message.GetNonce()), "size", length, "msg", message.DebugString())
+	_, err := messenger.sender.Send(message)
+	// NOLOG log.Trace(fmt.Sprintf("[%s][#%d]: SENT message", messenger.Name, message.GetNonce()), "size", length, "msg", message.DebugString())
 	return err
 }
 
 // Receive receives a message, reads it from the pipe
 func (messenger *Messenger) Receive(timeout int) (MessageHandler, error) {
-	log.Trace(fmt.Sprintf("[%s]: Receive message...", messenger.Name))
-	message, length, err := messenger.receiver.Receive(timeout)
+	// NOLOG log.Trace(fmt.Sprintf("[%s]: Receive message...", messenger.Name))
+	message, _, err := messenger.receiver.Receive(timeout)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Trace(fmt.Sprintf("[%s][#%d]: RECEIVED message", messenger.Name, message.GetNonce()), "size", length, "msg", message.DebugString())
+	// NOLOG log.Trace(fmt.Sprintf("[%s][#%d]: RECEIVED message", messenger.Name, message.GetNonce()), "size", length, "msg", message.DebugString())
 	messageNonce := message.GetNonce()
 	if messageNonce != messenger.Nonce+1 {
 		return nil, ErrInvalidMessageNonce
@@ -75,15 +74,15 @@ func (messenger *Messenger) ResetDialogue() {
 
 // Shutdown closes the pipes
 func (messenger *Messenger) Shutdown() {
-	log.Debug("Messenger.Shutdown()")
+	// NOLOG log.Debug("Messenger.Shutdown()")
 
 	err := messenger.receiver.Shutdown()
 	if err != nil {
-		log.Error("Cannot close receiver", "err", err)
+		// NOLOG log.Error("Cannot close receiver", "err", err)
 	}
 
 	err = messenger.sender.Shutdown()
 	if err != nil {
-		log.Error("Cannot close sender", "err", err)
+		// NOLOG log.Error("Cannot close sender", "err", err)
 	}
 }

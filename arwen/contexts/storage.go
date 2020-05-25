@@ -90,17 +90,17 @@ func (context *storageContext) isElrondReservedKey(key []byte) bool {
 }
 
 func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.StorageStatus, error) {
-	log.Info("SetStorage", "key", key, "value", value)
+	// NOLOG log.Info("SetStorage", "key", key, "value", value)
 	if context.isElrondReservedKey(key) {
 		return arwen.StorageUnchanged, arwen.ErrStoreElrondReservedKey
 	}
 
-	log.Info("SetStorage A")
+	// NOLOG log.Info("SetStorage A")
 	if context.host.Runtime().ReadOnly() {
 		return arwen.StorageUnchanged, nil
 	}
 
-	log.Info("SetStorage B")
+	// NOLOG log.Info("SetStorage B")
 	metering := context.host.Metering()
 	var zero []byte
 	strKey := string(key)
@@ -118,7 +118,7 @@ func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.Stora
 		oldValue = update.Data
 	}
 
-	log.Info("SetStorage C")
+	// NOLOG log.Info("SetStorage C")
 	lengthOldValue := len(oldValue)
 	if bytes.Equal(oldValue, value) {
 		useGas := metering.GasSchedule().BaseOperationCost.DataCopyPerByte * uint64(length)
@@ -126,7 +126,7 @@ func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.Stora
 		return arwen.StorageUnchanged, nil
 	}
 
-	log.Info("SetStorage D")
+	// NOLOG log.Info("SetStorage D")
 	newUpdate := &vmcommon.StorageUpdate{
 		Offset: key,
 		Data:   make([]byte, length),
@@ -145,14 +145,14 @@ func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.Stora
 		return arwen.StorageDeleted, nil
 	}
 
-	log.Info("SetStorage E")
+	// NOLOG log.Info("SetStorage E")
 	newValueExtraLength := length - lengthOldValue
 	if newValueExtraLength > 0 {
 		useGas := metering.GasSchedule().BaseOperationCost.PersistPerByte * uint64(lengthOldValue)
 		useGas += metering.GasSchedule().BaseOperationCost.StorePerByte * uint64(newValueExtraLength)
 		metering.UseGas(useGas)
 	}
-	log.Info("SetStorage F")
+	// NOLOG log.Info("SetStorage F")
 	if newValueExtraLength < 0 {
 		newValueExtraLength = -newValueExtraLength
 
@@ -163,6 +163,6 @@ func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.Stora
 		metering.FreeGas(freeGas)
 	}
 
-	log.Info("SetStorage END")
+	// NOLOG log.Info("SetStorage END")
 	return arwen.StorageModified, nil
 }

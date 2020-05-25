@@ -398,7 +398,7 @@ func transferValue(context unsafe.Pointer, destOffset int32, valueOffset int32, 
 
 //export asyncCall
 func asyncCall(context unsafe.Pointer, destOffset int32, valueOffset int32, dataOffset int32, length int32) {
-	log.Info("asyncCall BEGIN")
+	// NOLOG log.Info("asyncCall BEGIN")
 	runtime := arwen.GetRuntimeContext(context)
 	metering := arwen.GetMeteringContext(context)
 
@@ -442,7 +442,7 @@ func asyncCall(context unsafe.Pointer, destOffset int32, valueOffset int32, data
 
 	// Instruct Wasmer to interrupt the execution of the caller SC.
 	runtime.SetRuntimeBreakpointValue(arwen.BreakpointAsyncCall)
-	log.Info("asyncCall END")
+	// NOLOG log.Info("asyncCall END")
 }
 
 //export getArgumentLength
@@ -819,14 +819,14 @@ func int64getArgument(context unsafe.Pointer, id int32) int64 {
 
 //export int64storageStore
 func int64storageStore(context unsafe.Pointer, keyOffset int32, keyLength int32, value int64) int32 {
-	log.Info("int64storageStore BEGIN")
+	// NOLOG log.Info("int64storageStore BEGIN")
 	runtime := arwen.GetRuntimeContext(context)
 	storage := arwen.GetStorageContext(context)
 	metering := arwen.GetMeteringContext(context)
 
-	log.Info("int64storageStore before memload")
+	// NOLOG log.Info("int64storageStore before memload")
 	key, err := runtime.MemLoad(keyOffset, keyLength)
-	log.Info("int64storageStore after mem load")
+	// NOLOG log.Info("int64storageStore after mem load")
 	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
@@ -836,14 +836,14 @@ func int64storageStore(context unsafe.Pointer, keyOffset int32, keyLength int32,
 	gasToUse := metering.GasSchedule().ElrondAPICost.Int64StorageStore
 	metering.UseGas(gasToUse)
 
-	log.Info("int64storageStore before SetStorage")
+	// NOLOG log.Info("int64storageStore before SetStorage")
 	storageStatus, err := storage.SetStorage(key, data.Bytes())
-	log.Info("int64storageStore before SetStorage")
+	// NOLOG log.Info("int64storageStore before SetStorage")
 	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
 
-	log.Info("int64storageStore END")
+	// NOLOG log.Info("int64storageStore END")
 	return int32(storageStatus)
 }
 

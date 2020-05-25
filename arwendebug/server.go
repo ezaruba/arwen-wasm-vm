@@ -8,7 +8,7 @@ import (
 
 // StartServer -
 func StartServer(facade *DebugFacade, address string) error {
-	log.Debug("StartServer()")
+	// NOLOG log.Debug("StartServer()")
 
 	// TODO: gin.SetMode(gin.ReleaseMode)
 

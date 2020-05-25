@@ -298,7 +298,7 @@ func (context *runtimeContext) CleanInstance() {
 }
 
 func (context *runtimeContext) GetFunctionToCall() (wasmer.ExportedFunctionCallback, error) {
-	log.Info(context.callFunction)
+	// NOLOG log.Info(context.callFunction)
 	exports := context.instance.Exports
 	if function, ok := exports[context.callFunction]; ok {
 		return function, nil

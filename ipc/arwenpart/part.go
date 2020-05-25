@@ -55,7 +55,7 @@ func NewArwenPart(
 }
 
 func (part *ArwenPart) noopReplier(_ common.MessageHandler) common.MessageHandler {
-	log.Error("noopReplier called")
+	// NOLOG log.Error("noopReplier called")
 	return common.CreateMessage(common.UndefinedRequestOrResponse)
 }
 
@@ -64,7 +64,7 @@ func (part *ArwenPart) StartLoop() error {
 	part.Messenger.Reset()
 	err := part.doLoop()
 	part.Messenger.Shutdown()
-	log.Error("end of loop", "err", err)
+	// NOLOG log.Error("end of loop", "err", err)
 	return err
 }
 

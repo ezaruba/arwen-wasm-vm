@@ -8,7 +8,7 @@ import (
 )
 
 func (host *vmHost) handleAsyncCallBreakpoint() error {
-	log.Info("handleAsyncCallBreakpoint BEGIN")
+	// NOLOG log.Info("handleAsyncCallBreakpoint BEGIN")
 	runtime := host.Runtime()
 	runtime.SetRuntimeBreakpointValue(arwen.BreakpointNone)
 
@@ -22,7 +22,7 @@ func (host *vmHost) handleAsyncCallBreakpoint() error {
 	// Start calling the destination SC, synchronously.
 	destinationCallInput, err := host.createDestinationContractCallInput()
 	if err != nil {
-		log.Info("handleAsyncCallBreakpoint ERR", "err", err)
+		// NOLOG log.Info("handleAsyncCallBreakpoint ERR", "err", err)
 		return err
 	}
 
@@ -30,18 +30,18 @@ func (host *vmHost) handleAsyncCallBreakpoint() error {
 
 	callbackCallInput, err := host.createCallbackContractCallInput(destinationVMOutput, destinationErr)
 	if err != nil {
-		log.Info("handleAsyncCallBreakpoint ERR", "err", err)
+		// NOLOG log.Info("handleAsyncCallBreakpoint ERR", "err", err)
 		return err
 	}
 
 	callbackVMOutput, callBackErr := host.ExecuteOnDestContext(callbackCallInput)
 	err = host.processCallbackVMOutput(callbackVMOutput, callBackErr)
 	if err != nil {
-		log.Info("handleAsyncCallBreakpoint ERR", "err", err)
+		// NOLOG log.Info("handleAsyncCallBreakpoint ERR", "err", err)
 		return err
 	}
 
-	log.Info("handleAsyncCallBreakpoint END")
+	// NOLOG log.Info("handleAsyncCallBreakpoint END")
 	return nil
 }
 
@@ -130,7 +130,7 @@ func (host *vmHost) createDestinationContractCallInput() (*vmcommon.ContractCall
 }
 
 func (host *vmHost) createCallbackContractCallInput(destinationVMOutput *vmcommon.VMOutput, destinationErr error) (*vmcommon.ContractCallInput, error) {
-	log.Info("createCallbackContractCallInput BEGIN")
+	// NOLOG log.Info("createCallbackContractCallInput BEGIN")
 	metering := host.Metering()
 	runtime := host.Runtime()
 
@@ -155,7 +155,7 @@ func (host *vmHost) createCallbackContractCallInput(destinationVMOutput *vmcommo
 	gasToUse := metering.GasSchedule().ElrondAPICost.AsyncCallStep
 	gasToUse += metering.GasSchedule().BaseOperationCost.DataCopyPerByte * uint64(dataLength)
 	if gasLimit <= gasToUse {
-		log.Info("createCallbackContractCallInput err", arwen.ErrNotEnoughGas)
+		// NOLOG log.Info("createCallbackContractCallInput err", arwen.ErrNotEnoughGas)
 		return nil, arwen.ErrNotEnoughGas
 	}
 	gasLimit -= gasToUse
@@ -179,7 +179,7 @@ func (host *vmHost) createCallbackContractCallInput(destinationVMOutput *vmcommo
 		Function:      function,
 	}
 
-	log.Info("createCallbackContractCallInput END")
+	// NOLOG log.Info("createCallbackContractCallInput END")
 	return contractCallInput, nil
 }
 
