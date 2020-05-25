@@ -457,13 +457,16 @@ func (host *vmHost) EthereumCallData() []byte {
 }
 
 func (host *vmHost) callInitFunction() error {
+	log.Info("callInitFunction")
 	runtime := host.Runtime()
 	init := runtime.GetInitFunction()
+	log.Info("callInitFunction", "init", init)
 	if init == nil {
 		return nil
 	}
 
 	_, err := init()
+	log.Info("callInitFunction, called", "err", err)
 	if err != nil {
 		err = host.handleBreakpointIfAny(err)
 	}
