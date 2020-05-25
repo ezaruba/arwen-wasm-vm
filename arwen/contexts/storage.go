@@ -3,7 +3,6 @@ package contexts
 import (
 	"bytes"
 	"errors"
-	"fmt"
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
 	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
@@ -91,8 +90,7 @@ func (context *storageContext) isElrondReservedKey(key []byte) bool {
 }
 
 func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.StorageStatus, error) {
-	fmt.Println("SetStorage")
-	//log.Info("SetStorage", "key", key, "value", value)
+	log.Info("SetStorage", "key", key, "value", value)
 	if context.isElrondReservedKey(key) {
 		return arwen.StorageUnchanged, arwen.ErrStoreElrondReservedKey
 	}
