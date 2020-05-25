@@ -61,8 +61,8 @@ import (
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
 	"github.com/ElrondNetwork/arwen-wasm-vm/wasmer"
 	twos "github.com/ElrondNetwork/big-int-util/twos-complement"
-	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
 	logger "github.com/ElrondNetwork/elrond-go-logger"
+	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
 )
 
 var log = logger.GetOrCreate("elrondei")
@@ -819,6 +819,7 @@ func int64getArgument(context unsafe.Pointer, id int32) int64 {
 
 //export int64storageStore
 func int64storageStore(context unsafe.Pointer, keyOffset int32, keyLength int32, value int64) int32 {
+	log.Info("int64storageStore BEGIN")
 	runtime := arwen.GetRuntimeContext(context)
 	storage := arwen.GetStorageContext(context)
 	metering := arwen.GetMeteringContext(context)
@@ -838,6 +839,7 @@ func int64storageStore(context unsafe.Pointer, keyOffset int32, keyLength int32,
 		return -1
 	}
 
+	log.Info("int64storageStore END")
 	return int32(storageStatus)
 }
 
