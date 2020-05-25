@@ -144,6 +144,6 @@ func (part *NodePart) SendStopSignal() error {
 }
 
 func (part *NodePart) timeTrack(start time.Time, message string) {
-	elapsed := time.Since(start)
+	//elapsed := time.Since(start)
 	// NOLOG log.Trace(message, "duration", elapsed)
 }

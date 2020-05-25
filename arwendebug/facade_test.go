@@ -47,6 +47,7 @@ func TestFacade_RunContract_Counter(t *testing.T) {
 }
 
 func TestFacade_RunContract_ERC20(t *testing.T) {
+	t.Skip()
 	context := newTestContext(t)
 
 	context.createAccount("alice", "42")
