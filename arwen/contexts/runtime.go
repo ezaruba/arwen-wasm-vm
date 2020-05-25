@@ -6,8 +6,11 @@ import (
 
 	"github.com/ElrondNetwork/arwen-wasm-vm/arwen"
 	"github.com/ElrondNetwork/arwen-wasm-vm/wasmer"
+	logger "github.com/ElrondNetwork/elrond-go-logger"
 	vmcommon "github.com/ElrondNetwork/elrond-vm-common"
 )
+
+var log = logger.GetOrCreate("runtime")
 
 var _ arwen.RuntimeContext = (*runtimeContext)(nil)
 
@@ -295,6 +298,7 @@ func (context *runtimeContext) CleanInstance() {
 }
 
 func (context *runtimeContext) GetFunctionToCall() (wasmer.ExportedFunctionCallback, error) {
+	log.Info(context.callFunction)
 	exports := context.instance.Exports
 	if function, ok := exports[context.callFunction]; ok {
 		return function, nil
