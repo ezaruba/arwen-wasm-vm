@@ -98,15 +98,15 @@ func dummyGoRoutine() {
 }
 
 func (context *storageContext) SetStorage(key []byte, value []byte) (arwen.StorageStatus, error) {
-	fmt.Println("launch dummy routine")
-	go dummyGoRoutine()
-	fmt.Println("launched dummy routine")
-	//log.Info("SetStorage", "key", key, "value", value)
+	// fmt.Println("launch dummy routine")
+	// //go dummyGoRoutine()
+	// fmt.Println("launched dummy routine")
+	log.Info("SetStorage", "key", key, "value", value)
 	if context.isElrondReservedKey(key) {
 		return arwen.StorageUnchanged, arwen.ErrStoreElrondReservedKey
 	}
 
-	//log.Info("SetStorage A")
+	log.Info("SetStorage A")
 	if context.host.Runtime().ReadOnly() {
 		return arwen.StorageUnchanged, nil
 	}
