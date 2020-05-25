@@ -28,18 +28,15 @@ func (host *vmHost) doRunSmartContractCreate(input *vmcommon.ContractCreateInput
 		ContractAddress:      address,
 	}
 
-	log.Info("codeDeployInput", "...", codeDeployInput)
-
-	return output.CreateVMOutputInCaseOfError(errCodeNotFound)
-	// vmOutput, err := host.performCodeDeploy(codeDeployInput)
-	// if err != nil {
-	// 	return output.CreateVMOutputInCaseOfError(err)
-	// }
-	// return vmOutput
+	vmOutput, err := host.performCodeDeploy(codeDeployInput)
+	if err != nil {
+		return output.CreateVMOutputInCaseOfError(err)
+	}
+	return vmOutput
 }
 
 func (host *vmHost) performCodeDeploy(input arwen.CodeDeployInput) (*vmcommon.VMOutput, error) {
-	log.Trace("performCodeDeploy", "address", input.ContractAddress, "len(code)", len(input.ContractCode), "metadata", input.ContractCodeMetadata)
+	log.Info("performCodeDeploy", "address", input.ContractAddress, "len(code)", len(input.ContractCode), "metadata", input.ContractCodeMetadata)
 
 	_, _, metering, output, runtime, _ := host.GetContexts()
 
@@ -52,13 +49,13 @@ func (host *vmHost) performCodeDeploy(input arwen.CodeDeployInput) (*vmcommon.VM
 	vmInput := runtime.GetVMInput()
 	err = runtime.StartWasmerInstance(input.ContractCode, vmInput.GasProvided)
 	if err != nil {
-		log.Debug("performCodeDeploy/StartWasmerInstance", "err", err)
+		log.Info("performCodeDeploy/StartWasmerInstance", "err", err)
 		return nil, arwen.ErrContractInvalid
 	}
 
 	err = runtime.VerifyContractCode()
 	if err != nil {
-		log.Debug("performCodeDeploy/VerifyContractCode", "err", err)
+		log.Info("performCodeDeploy/VerifyContractCode", "err", err)
 		return nil, arwen.ErrContractInvalid
 	}
 
@@ -70,7 +67,9 @@ func (host *vmHost) performCodeDeploy(input arwen.CodeDeployInput) (*vmcommon.VM
 		return nil, err
 	}
 
+	log.Info("DeployCode()...")
 	output.DeployCode(input)
+	log.Info("DeployCode()... deployed")
 	vmOutput := output.GetVMOutput()
 	return vmOutput, nil
 }
