@@ -93,6 +93,6 @@ func GetSCCode(fileName string) []byte {
 }
 
 func TimeTrack(start time.Time, message string) {
-	elapsed := time.Since(start)
-	logDuration.Trace(message, "duration", elapsed)
+	// elapsed := time.Since(start)
+	// logDuration.Trace(message, "duration", elapsed)
 }
