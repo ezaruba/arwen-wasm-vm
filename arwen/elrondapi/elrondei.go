@@ -824,7 +824,9 @@ func int64storageStore(context unsafe.Pointer, keyOffset int32, keyLength int32,
 	storage := arwen.GetStorageContext(context)
 	metering := arwen.GetMeteringContext(context)
 
+	log.Info("int64storageStore before memload")
 	key, err := runtime.MemLoad(keyOffset, keyLength)
+	log.Info("int64storageStore after mem load")
 	if arwen.WithFault(err, context, runtime.ElrondAPIErrorShouldFailExecution()) {
 		return -1
 	}
