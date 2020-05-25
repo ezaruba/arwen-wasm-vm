@@ -8,6 +8,7 @@ import (
 )
 
 func (host *vmHost) handleAsyncCallBreakpoint() error {
+	log.Info("handleAsyncCallBreakpoint BEGIN")
 	runtime := host.Runtime()
 	runtime.SetRuntimeBreakpointValue(arwen.BreakpointNone)
 
@@ -21,6 +22,7 @@ func (host *vmHost) handleAsyncCallBreakpoint() error {
 	// Start calling the destination SC, synchronously.
 	destinationCallInput, err := host.createDestinationContractCallInput()
 	if err != nil {
+		log.Info("handleAsyncCallBreakpoint ERR", "err", err)
 		return err
 	}
 
@@ -28,15 +30,18 @@ func (host *vmHost) handleAsyncCallBreakpoint() error {
 
 	callbackCallInput, err := host.createCallbackContractCallInput(destinationVMOutput, destinationErr)
 	if err != nil {
+		log.Info("handleAsyncCallBreakpoint ERR", "err", err)
 		return err
 	}
 
 	callbackVMOutput, callBackErr := host.ExecuteOnDestContext(callbackCallInput)
 	err = host.processCallbackVMOutput(callbackVMOutput, callBackErr)
 	if err != nil {
+		log.Info("handleAsyncCallBreakpoint ERR", "err", err)
 		return err
 	}
 
+	log.Info("handleAsyncCallBreakpoint END")
 	return nil
 }
 
